@@ -1,11 +1,92 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8">
-  <title>Hello World</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>LumaTrace</title>
+
+  <!-- Leaflet CSS (CDN) -->
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+    crossorigin=""
+  />
+
+  <!-- App Styles -->
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <h1>Hello World!</h1>
-  <p>Das ist meine erste HTML-Seite.</p>
+  <header class="app-header" role="banner">
+    <h1>LumaTrace</h1>
+  </header>
+
+  <main class="app-main" role="main" aria-label="Kartenansicht und Steuerung">
+    <div id="map" aria-label="OpenStreetMap Karte"></div>
+
+    <div class="controls" role="group" aria-label="Tracking-Steuerung">
+      <button id="toggle-track" class="btn primary" aria-pressed="false">
+        Trajektorie aufzeichnen
+      </button>
+      <button id="save-hazard" class="btn secondary">
+        Gefahrenstelle speichern
+      </button>
+    </div>
+
+    <p id="status" role="status" aria-live="polite" class="status" aria-atomic="true"></p>
+  </main>
+
+  <footer class="app-footer" role="contentinfo">
+    Erstellt von Gruppe A / Kurs GTA / ETHZ – © 2025
+  </footer>
+
+  <!-- Modal: Gefahrenstelle ------------------------------------------------ -->
+  <div id="hazard-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" hidden>
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2 id="modal-title">Gefahrenstelle speichern</h2>
+        <button id="modal-close" class="icon-btn" aria-label="Schließen (Esc)">
+          ×
+        </button>
+      </div>
+
+      <form id="hazard-form" class="modal-body" novalidate>
+        <div class="field">
+          <label for="desc">Beschreibung</label>
+          <input id="desc" name="desc" type="text" placeholder="z. B. Gefährliche Stelle mit Tram" autocomplete="off" required />
+          <small class="hint">Kurze, prägnante Beschreibung.</small>
+        </div>
+
+        <div class="field two-col">
+          <div>
+            <label for="level">Gefährlichkeitsstufe (1–5)</label>
+            <input id="level" name="level" type="number" inputmode="numeric" min="1" max="5" step="1" required />
+          </div>
+          <div class="legend" aria-live="polite">
+            <span><strong>1</strong> – fast nicht gefährlich</span>
+            <span><strong>3</strong> – mittel</span>
+            <span><strong>5</strong> – extrem gefährlich</span>
+          </div>
+        </div>
+
+        <p id="form-error" class="form-error" role="alert" aria-live="assertive"></p>
+
+        <div class="modal-actions">
+          <button type="button" class="btn secondary" id="cancel-modal">Abbrechen</button>
+          <button type="submit" class="btn primary" id="save-modal">Speichern</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Leaflet JS (CDN) -->
+  <script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+    crossorigin=""
+  ></script>
+
+  <!-- App Logic -->
+  <script src="app.js"></script>
 </body>
 </html>
