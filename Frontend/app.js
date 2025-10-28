@@ -162,7 +162,7 @@
     // Prefill defaults
     formError.textContent = '';
     descInput.value = '';
-    levelInput.value = '3';
+    levelInput.value = '2';
 
     modal.hidden = false;
     // Simple focus trap
@@ -217,15 +217,15 @@
 
     const desc = descInput.value.trim();
     const levelRaw = Number(levelInput.value);
-    const level = clamp(isNaN(levelRaw) ? 0 : levelRaw, 1, 5);
+    const level = clamp(isNaN(levelRaw) ? 0 : levelRaw, 0, 4);
 
     if (!desc) {
       formError.textContent = 'Bitte eine Beschreibung eingeben.';
       descInput.focus();
       return;
     }
-    if (!level || level < 1 || level > 5) {
-      formError.textContent = 'Bitte eine Zahl von 1 bis 5 angeben.';
+    if (!level || level < 0 || level > 4) {
+      formError.textContent = 'Bitte eine Zahl von 0 bis 4 angeben.';
       levelInput.focus();
       return;
     }
@@ -271,3 +271,4 @@
     updateStatus('Bereit. Du kannst die Trajektorie aufzeichnen oder eine Gefahrenstelle speichern.');
   });
 })();
+
