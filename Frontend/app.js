@@ -192,7 +192,7 @@
     modal.hidden = true;
     // Remove trap listener if added
     if (modal.dataset.trap) {
-      modal.replaceWith(modal.cloneNode(true)); // quick way to drop listeners
+      //modal.replaceWith(modal.cloneNode(true)); // quick way to drop listeners -> meherer Gefahrenstellen in einer Trajektorie
       // re-bind references after clone
       rebindModalRefs();
     }
@@ -231,13 +231,15 @@
     }
 
     const center = map.getCenter();
+    const coordinate = lastPosition
+      ? { lat: lastPosition.lat, lng: lastPosition.lng }
+      : { lat: center.lat, lng: center.lng };
+
     const payload = {
       type: 'hazard',
       at: new Date().toISOString(),
       source: lastPosition ? 'lastPosition' : 'mapCenter',
-      coordinate: lastPosition
-        ? { lat: lastPosition.lat, lng: lastPosition.lng }
-        : { lat: center.lat, lng: center.lng },
+      coordinate,
       description: desc,
       severity: level
     };
@@ -245,6 +247,21 @@
     console.log('Gefahrenstelle gespeichert', payload);
     updateStatus(`Gefahrenstelle gespeichert (Stufe ${level}) – siehe Konsole.`);
     closeModal();
+
+    // dynamisch aktuelle Daten an insertPoint() übergeben
+    const currentTimestamp = new Date().toISOString();
+    const randomId = Date.now(); // einfache eindeutige ID
+
+    insertPoint(
+      coordinate.lat,
+      coordinate.lng,
+      randomId,          // aktuelle ID (Zeitbasiert)
+      currentTimestamp,  // aktuelle Zeit
+      0,                 // trajectory_id -> noch hardcode
+      desc,      // "beschreibung"
+      level   // aus Formular (1–5)
+    );
+
   }
 
   /* Button Handlers -------------------------------------------------------- */
@@ -271,4 +288,65 @@
     updateStatus('Bereit. Du kannst die Trajektorie aufzeichnen oder eine Gefahrenstelle speichern.');
   });
 })();
+
+wfs = 'https://baug-ikg-gis-01.ethz.ch:8443/geoserver/GTA25_project/wfs';
+
+// Inserts the point in the database
+function insertPoint(lat, lng, id, ts, trajectory_id, type, severity) {
+	// TODO: Declare a variable called postData and assign an appropriate value.
+    let postData =
+        '<wfs:Transaction\n'
+        + 'service="WFS"\n'
+        + 'version="1.0.0"\n'
+        + 'xmlns="http://www.opengis.net/wfs"\n'
+        + 'xmlns:wfs="http://www.opengis.net/wfs"\n'
+        + 'xmlns:gml="http://www.opengis.net/gml"\n'
+        + 'xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"\n'
+        + 'xmlns:GTA25_project="https://www.gis.ethz.ch/GTA25_project"\n'
+        + 'xsi:schemaLocation="https://www.gis.ethz.ch/GTA25_project\n'
+        + 'https://baug-ikg-gis-01.ethz.ch:8443/geoserver/GTA25_project/wfs?service=WFS&amp;version=1.0.0&amp;request=DescribeFeatureType&amp;typeName=GTA25_project%3Apoi_event\n'
+        + 'http://www.opengis.net/wfs\n'
+        + 'https://baug-ikg-gis-01.ethz.ch:8443/geoserver/schemas/wfs/1.0.0/WFS-basic.xsd">\n'
+        + '<wfs:Insert>\n'
+        + '<GTA25_project:poi_event>\n'
+        //+ '<lon>'+lng+'</lon>\n'
+        //+ '<lat>'+lat+'</lat>\n'
+        + '<id>'+id+'</id>\n'
+        + '<ts>'+ts+'</ts>\n'
+        + '<trajectory_id>'+trajectory_id+'</trajectory_id>\n'
+        + '<type>'+type+'</type>\n'
+        + '<severity>'+severity+'</severity>\n'
+        + '<geometry>\n'
+        + '<gml:Point srsName="http://www.opengis.net/gml/srs/epsg.xml#4326">\n'
+        + '<gml:coordinates xmlns:gml="http://www.opengis.net/gml" decimal="." cs="," ts=" ">'+lng+ ',' +lat+'</gml:coordinates>\n'
+        + '</gml:Point>\n'
+        + '</geometry>\n'
+        + '</GTA25_project:poi_event>\n'
+        + '</wfs:Insert>\n'
+        + '</wfs:Transaction>';
+
+    
+	$.ajax({
+		type: "POST",
+		url: wfs,
+		dataType: "xml",
+		contentType: "text/xml",
+		data: postData,
+		success: function() {	
+			//Success feedback
+			console.log("Success from AJAX, data sent to Geoserver");
+			
+			// Do something to notisfy user
+			alert("Check if data is inserted into database");
+		},
+		error: function (xhr, thrownError) {
+			//Error handling
+			console.log("Error from AJAX");
+			console.log(xhr.status);
+			console.log(thrownError);
+		  }
+	});
+}
+
+
 
