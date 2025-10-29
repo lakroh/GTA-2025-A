@@ -12,6 +12,7 @@
     integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
     crossorigin=""
   />
+  <script src="https://code.jquery.com/jquery-3.7.1.js" integrity="sha256-eKhayi8LEQwp4NKxN+CfCh+3qOVUtJn3QNZ0TciWLP4=" crossorigin="anonymous"></script>
 
   <!-- App Styles -->
   <link rel="stylesheet" href="styles.css" />
@@ -60,12 +61,12 @@
         <div class="field two-col">
           <div>
             <label for="level">Gefährlichkeitsstufe (0–4)</label>
-            <input id="level" name="level" type="number" inputmode="numeric" min="0" max="4" step="1" required />
+            <input id="level" name="level" type="number" inputmode="numeric" min="1" max="5" step="1" required />
           </div>
           <div class="legend" aria-live="polite">
-            <span><strong>1</strong> – fast nicht gefährlich</span>
-            <span><strong>3</strong> – mittel</span>
-            <span><strong>5</strong> – extrem gefährlich</span>
+            <span><strong>0</strong> – nicht gefährlich</span>
+            <span><strong>2</strong> – mittel</span>
+            <span><strong>4</strong> – extrem gefährlich</span>
           </div>
         </div>
 
@@ -90,3 +91,7 @@
   <script src="app.js"></script>
 </body>
 </html>
+
+
+
+
