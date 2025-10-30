@@ -224,7 +224,7 @@
       descInput.focus();
       return;
     }
-    if (!level || level < 0 || level > 4) {
+    if (level < 0 || level > 4 || isNaN(level)) {
       formError.textContent = 'Bitte eine Zahl von 0 bis 4 angeben.';
       levelInput.focus();
       return;
@@ -259,7 +259,7 @@
       currentTimestamp,  // aktuelle Zeit
       0,                 // trajectory_id -> noch hardcode
       desc,      // "beschreibung"
-      level   // aus Formular (1–5)
+      level   // aus Formular (0-4)
     );
 
   }
@@ -347,6 +347,7 @@ function insertPoint(lat, lng, id, ts, trajectory_id, type, severity) {
 		  }
 	});
 }
+
 
 
 
