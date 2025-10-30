@@ -259,7 +259,7 @@
       currentTimestamp,  // aktuelle Zeit
       0,                 // trajectory_id -> noch hardcode
       desc,      // "beschreibung"
-      level   // aus Formular (0-4)
+      level   // aus Formular (0–4)
     );
 
   }
@@ -309,18 +309,18 @@ function insertPoint(lat, lng, id, ts, trajectory_id, type, severity) {
         + 'https://baug-ikg-gis-01.ethz.ch:8443/geoserver/schemas/wfs/1.0.0/WFS-basic.xsd">\n'
         + '<wfs:Insert>\n'
         + '<GTA25_project:poi_event>\n'
-        //+ '<lon>'+lng+'</lon>\n'
-        //+ '<lat>'+lat+'</lat>\n'
+        + '<lng>'+lng+'</lng>\n'
+        + '<lat>'+lat+'</lat>\n'
         + '<id>'+id+'</id>\n'
         + '<ts>'+ts+'</ts>\n'
         + '<trajectory_id>'+trajectory_id+'</trajectory_id>\n'
         + '<type>'+type+'</type>\n'
         + '<severity>'+severity+'</severity>\n'
-        + '<geometry>\n'
+        + '<geom>\n'
         + '<gml:Point srsName="http://www.opengis.net/gml/srs/epsg.xml#4326">\n'
         + '<gml:coordinates xmlns:gml="http://www.opengis.net/gml" decimal="." cs="," ts=" ">'+lng+ ',' +lat+'</gml:coordinates>\n'
         + '</gml:Point>\n'
-        + '</geometry>\n'
+        + '</geom>\n'
         + '</GTA25_project:poi_event>\n'
         + '</wfs:Insert>\n'
         + '</wfs:Transaction>';
@@ -347,6 +347,9 @@ function insertPoint(lat, lng, id, ts, trajectory_id, type, severity) {
 		  }
 	});
 }
+
+
+
 
 
 
