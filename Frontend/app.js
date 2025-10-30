@@ -354,3 +354,9 @@ function insertPoint(lat, lng, id, ts, trajectory_id, type, severity) {
 
 
 
+
+
+
+
+
+
