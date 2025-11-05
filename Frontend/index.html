@@ -87,6 +87,37 @@
     crossorigin=""
   ></script>
 
+  <!-- Modal: Start-Info ------------------------------------------------------ -->
+  <div id="intro-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="intro-title">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2 id="intro-title">Willkommen bei LumaTrace</h2>
+      </div>
+
+      <div class="modal-body">
+        <p><strong>Kurzanleitung:</strong></p>
+        <ul>
+          <li>Drücke <em>"Trajektorie aufzeichnen"</em>, um deine Bewegung zu starten.</li>
+          <li>Wenn du eine <em>Gefahrenstelle im Verkehr</em> bemerkst, klicke auf "Gefahrenstelle speichern".</li>
+          <li>Bewerte die Stelle von 0-4 und gib eine kurze Beschreibung an.</li>
+        </ul>
+        <div class="perimeter-info">
+          <p><strong>Untersuchungsgebiet:</strong></p>
+          <p>
+            <a href="https://map.geo.admin.ch/#/map?lang=de&center=2683267.83,1247945.82&z=9.245&topic=ech&layers=ch.swisstopo.zeitreihen@year=1864,f;ch.bfs.gebaeude_wohnungs_register,f;ch.bav.haltestellen-oev,f;ch.swisstopo.swisstlm3d-wanderwege,f;ch.vbs.schiessanzeigen,f;ch.astra.wanderland-sperrungen_umleitungen,f;KML%7Chttps://public.geo.admin.ch/api/kml/files/Q8VT2glYRCmPAb03Qp9XbQ&bgLayer=ch.swisstopo.pixelkarte-farbe&featureInfo=tooltip" target="_blank" class="btn secondary">
+              Perimeter auf GeoAdmin-Karte anzeigen
+            </a>
+          </p>
+          <small> Hinweis: Nur innerhalb dieses definierten Perimeters werden Daten aufgezeichnet.</small>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button id="intro-close" class="btn primary">Verstanden</button>
+      </div>
+    </div>
+  </div>
+
   <!-- App Logic -->
   <script src="app.js"></script>
 </body>
