@@ -1,38 +1,37 @@
 from flask import Flask, jsonify
+import pandas as pd
 import geopandas as gpd
 from shapely.geometry import Point
 
 app = Flask(__name__)
 
-# Pfad zu deiner CSV-Datei
-CSV_PATH = "Fussgaenger_in_Polygon.csv"
+# Pfad zur CSV-Datei
+CSV_PATH = "Fussgaenger_in_Polygon Kopie.csv"
 
-# Die Spaltennamen müssen zu deiner CSV passen
-# (z. B. "X" und "Y" für LV95)
-X_COL = "X"
-Y_COL = "Y"
+# Spaltennamen der LV95-Koordinaten
+E_COL = "AccidentLocation_CHLV95_E"  # Easting
+N_COL = "AccidentLocation_CHLV95_N"  # Northing
 
 @app.route("/buffers")
 def get_buffers():
     # CSV laden
-    df = gpd.read_file(CSV_PATH) if CSV_PATH.endswith(".geojson") else gpd.read_file(CSV_PATH)
-    try:
-        df = gpd.read_file(CSV_PATH)
-    except Exception:
-        import pandas as pd
-        df = pd.read_csv(CSV_PATH)
-        df["geometry"] = df.apply(lambda r: Point(r[X_COL], r[Y_COL]), axis=1)
-        df = gpd.GeoDataFrame(df, geometry="geometry", crs="EPSG:2056")  # LV95
+    df = pd.read_csv(CSV_PATH)
 
-    # Buffer von 7m um jeden Punkt
-    df["geometry"] = df.buffer(7)
+    # Geometrie aus Koordinaten erzeugen (LV95)
+    gdf = gpd.GeoDataFrame(
+        df,
+        geometry=gpd.points_from_xy(df[E_COL], df[N_COL]),
+        crs="EPSG:2056"
+    )
 
-    # Optional: Koordinatensystem für Leaflet (WGS84)
-    df = df.to_crs("EPSG:4326")
+    # Buffer mit 7 m um jeden Punkt
+    gdf["geometry"] = gdf.buffer(7)
+
+    # In WGS84 (EPSG:4326) umprojizieren, damit Leaflet sie korrekt anzeigt
+    gdf = gdf.to_crs("EPSG:4326")
 
     # Als GeoJSON zurückgeben
-    return jsonify(df.__geo_interface__)
+    return jsonify(gdf.__geo_interface__)
 
 if __name__ == "__main__":
     app.run(debug=True)
-
