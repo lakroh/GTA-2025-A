@@ -13,7 +13,6 @@
   const modal = document.getElementById('hazard-modal');
   const modalCloseBtn = document.getElementById('modal-close');
   const cancelModalBtn = document.getElementById('cancel-modal');
-  const saveModalBtn = document.getElementById('save-modal');
   const hazardForm = document.getElementById('hazard-form');
   const descInput = document.getElementById('desc');
   const levelInput = document.getElementById('level');
@@ -31,7 +30,6 @@
   let saveTimer = null;
   let currentTrajectoryId = null;
   let trajectoryCoords = []; // speichert alle Punkte der aktuellen Trajektorie
-
 
   // Modal focus handling
   let lastFocusedBeforeModal = null;
@@ -124,7 +122,6 @@
 
   /* Close trajectory on DB ------------------------------------------------ */
   function closeTrajectory(id) {
-    // Wenn keine Punkte vorhanden sind, nur ended_at setzen
     if (trajectoryCoords.length < 2) {
       const postData =
         '<wfs:Transaction service="WFS" version="1.0.0"'
@@ -146,7 +143,6 @@
       return;
     }
 
-    // 🧭 Koordinatenliste zu einem GML LineString konvertieren
     const coordString = trajectoryCoords.map(c => c.join(',')).join(' ');
     const postData =
       '<wfs:Transaction service="WFS" version="1.0.0"'
@@ -174,11 +170,8 @@
       + '</wfs:Transaction>';
 
     fetch(wfs, { method: "POST", headers: { "Content-Type": "text/xml" }, body: postData });
-
-    // Liste leeren nach dem Speichern
     trajectoryCoords = [];
   }
-
 
   /* Geolocation ------------------------------------------------------------ */
   async function startTracking() {
@@ -187,13 +180,21 @@
       return;
     }
 
-    // ✅ Neue trajectory-ID holen
     currentTrajectoryId = await fetchNewTrajectoryId();
-    trajectoryCoords = []; // leere die Liste am Anfang jeder neuen Trajektorie
+    trajectoryCoords = [];
     console.log("✅ Neue Trajektorie-ID:", currentTrajectoryId);
 
     setTrackingUI(true);
     updateStatus('Tracking gestartet …');
+
+    // 🔹 ERSTEN Punkt sofort speichern (started_at)
+    navigator.geolocation.getCurrentPosition((pos) => {
+      const { latitude, longitude } = pos.coords;
+      const ts = new Date().toISOString();
+      const id = Date.now();
+      insertTrajectoryPoint(latitude, longitude, id, ts, currentTrajectoryId);
+      console.log("📍 Started_at Punkt gespeichert:", latitude, longitude);
+    });
 
     watchId = navigator.geolocation.watchPosition(onPosition, onGeoError, {
       enableHighAccuracy: true,
@@ -201,7 +202,7 @@
       timeout: 10000
     });
 
-    //alle 8 Sekunden Trajectory_point aufnehmen
+    // 🔹 Alle 8 Sekunden Trajectory_Point aufnehmen
     saveTimer = setInterval(() => {
       if (lastPosition) {
         insertTrajectoryPoint(
@@ -209,7 +210,7 @@
           lastPosition.lng,
           Date.now(),
           new Date().toISOString(),
-          currentTrajectoryId // ✅ richtige ID
+          currentTrajectoryId
         );
         console.log("📍 Trackingpunkt gespeichert:", lastPosition);
       }
@@ -222,7 +223,18 @@
       watchId = null;
     }
 
-    if (saveTimer) { clearInterval(saveTimer); saveTimer = null; }
+    if (saveTimer) {
+      clearInterval(saveTimer);
+      saveTimer = null;
+    }
+
+    // 🔹 LETZTEN Punkt speichern (ended_at)
+    if (lastPosition && currentTrajectoryId) {
+      const ts = new Date().toISOString();
+      const id = Date.now() + 1;
+      insertTrajectoryPoint(lastPosition.lat, lastPosition.lng, id, ts, currentTrajectoryId);
+      console.log("📍 Ended_at Punkt gespeichert:", lastPosition);
+    }
 
     if (currentTrajectoryId !== null) {
       closeTrajectory(currentTrajectoryId);
@@ -238,7 +250,7 @@
     const latlng = { lat: latitude, lng: longitude };
     lastPosition = { ...latlng, accuracy, timestamp: pos.timestamp };
 
-    trajectoryCoords.push([longitude, latitude]); // speichert für LineString
+    trajectoryCoords.push([longitude, latitude]);
 
     polyline.addLatLng(latlng);
     currentDot.setLatLng(latlng);
@@ -251,16 +263,12 @@
     updateStatus(`Letzte Position: ${fmtLatLng(latlng)} (±${Math.round(accuracy)} m)`);
   }
 
-  //korrekt?
   function onGeoError(err) {
     updateStatus('GPS Fehler');
     setTrackingUI(false);
   }
 
   /* Modal handling --------------------------------------------------------- */
-  //im moment kann man werte über 4 eingeben, aber es kommt keine warnung -> noch ergänzen
-  /* Modal handling --------------------------------------------------------- */
-// Eingabewerte prüfen, Warnung wenn Level außerhalb 0–4
   function openModal() {
     lastFocusedBeforeModal = document.activeElement;
     formError.textContent = '';
@@ -282,14 +290,12 @@
     const desc = descInput.value.trim();
     const levelRaw = Number(levelInput.value);
 
-    // Prüfen, ob Beschreibung eingegeben
     if (!desc) {
       formError.textContent = 'Bitte eine Beschreibung eingeben.';
       descInput.focus();
       return;
     }
 
-    // Prüfen, ob Zahl und innerhalb 0–4
     if (isNaN(levelRaw) || levelRaw < 0 || levelRaw > 4) {
       formError.textContent = 'Bitte eine Zahl zwischen 0 und 4 eingeben.';
       levelInput.focus();
@@ -301,27 +307,18 @@
     const ts = new Date().toISOString();
     const id = Date.now();
 
-    insertPoint(
-      coordinate.lat,
-      coordinate.lng,
-      id,
-      ts,
-      currentTrajectoryId ?? 0,
-      desc,
-      level
-    );
+    insertPoint(coordinate.lat, coordinate.lng, id, ts, currentTrajectoryId ?? 0, desc, level);
 
     updateStatus(`Gefahrenstelle gespeichert (Stufe ${level})`);
     closeModal();
   }
-
 
   /* Button Handlers -------------------------------------------------------- */
   toggleBtn.addEventListener('click', () => {
     if (isTracking) stopTracking();
     else startTracking();
   });
-  hazardBtn.addEventListener('click', () => openModal());
+  hazardBtn.addEventListener('click', openModal);
   modalCloseBtn.addEventListener('click', closeModal);
   cancelModalBtn.addEventListener('click', closeModal);
   hazardForm.addEventListener('submit', onModalSubmit);
@@ -331,32 +328,20 @@
     initMap();
     updateStatus('Bereit.');
 
-    // Intro-Modal beim Start anzeigen
-window.addEventListener('DOMContentLoaded', () => {
-  const introModal = document.getElementById('intro-modal');
-  const introClose = document.getElementById('intro-close');
-
-  // Modal anzeigen
-  introModal.hidden = false;
-
-  // Schließen durch Button
-  introClose.addEventListener('click', () => {
-    introModal.hidden = true;
-  });
-
-  // Schließen mit ESC
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && !introModal.hidden) {
-      introModal.hidden = true;
+    // Intro-Modal anzeigen
+    const introModal = document.getElementById('intro-modal');
+    const introClose = document.getElementById('intro-close');
+    if (introModal && introClose) {
+      introModal.hidden = false;
+      introClose.addEventListener('click', () => (introModal.hidden = true));
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && !introModal.hidden) introModal.hidden = true;
+      });
     }
-  });
-});
-
   });
 })();
 
-
-/* WFS insert functions ----------------------------------------------------- */
+/* -------------------------- WFS INSERTS ---------------------------------- */
 
 wfs = 'https://baug-ikg-gis-01.ethz.ch:8443/geoserver/GTA25_project/wfs';
 
