@@ -330,8 +330,31 @@
   document.addEventListener('DOMContentLoaded', () => {
     initMap();
     updateStatus('Bereit.');
+
+    // Intro-Modal beim Start anzeigen
+window.addEventListener('DOMContentLoaded', () => {
+  const introModal = document.getElementById('intro-modal');
+  const introClose = document.getElementById('intro-close');
+
+  // Modal anzeigen
+  introModal.hidden = false;
+
+  // Schließen durch Button
+  introClose.addEventListener('click', () => {
+    introModal.hidden = true;
+  });
+
+  // Schließen mit ESC
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !introModal.hidden) {
+      introModal.hidden = true;
+    }
+  });
+});
+
   });
 })();
+
 
 /* WFS insert functions ----------------------------------------------------- */
 
