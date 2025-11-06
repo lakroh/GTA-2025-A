@@ -1,5 +1,7 @@
-user	"gta25_g1"
-password	"8GttT0vu"
-host	"ikgpgis.ethz.ch"
-port	"5432"
-database	"gta"
+{
+    "user": "gta25_g1",
+    "password": "8GttT0vu",
+    "host": "ikgpgis.ethz.ch",
+    "port": "5432",
+    "database": "gta"
+}
