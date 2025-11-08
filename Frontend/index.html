@@ -52,9 +52,12 @@
       </div>
 
       <form id="hazard-form" class="modal-body" novalidate>
+        <!-- 🚨 Hinweis für frühere Unfallstelle -->
+        <p id="buffer-hint" class="hint" style="color:#b42318; font-weight:600;" hidden>
+          ⚠️ Hinweis: Du befindest dich in der Nähe einer früheren Unfallstelle.</p>
         <div class="field">
           <label for="desc">Beschreibung</label>
-          <input id="desc" name="desc" type="text" placeholder="z. B. Gefährliche Stelle mit Tram" autocomplete="off" required />
+          <input id="desc" name="desc" type="text" placeholder="z.B. Gefährliche Stelle mit Tram" autocomplete="off" required />
           <small class="hint">Kurze, prägnante Beschreibung.</small>
         </div>
 
@@ -97,15 +100,16 @@
       <div class="modal-body">
         <p><strong>Kurzanleitung:</strong></p>
         <ul>
-          <li>Drücke <em>"Trajektorie aufzeichnen"</em>, um deine Bewegung zu starten.</li>
+          <li>Drücke "Trajektorie aufzeichnen", um deine Bewegung zu starten.</li>
           <li>Wenn du eine <em>Gefahrenstelle im Verkehr</em> bemerkst, klicke auf "Gefahrenstelle speichern".</li>
           <li>Bewerte die Stelle von 0-4 und gib eine kurze Beschreibung an.</li>
+          <li>Falls du an eine frühere Unfallstelle kommst, erscheint automatisch ein Pop-up-Fenster, in dem du den Standort ebenfalls bewerten sollst.</li>
         </ul>
         <div class="perimeter-info">
           <p><strong>Untersuchungsgebiet:</strong></p>
           <p>
             <a href="https://map.geo.admin.ch/#/map?lang=de&center=2683267.83,1247945.82&z=9.245&topic=ech&layers=ch.swisstopo.zeitreihen@year=1864,f;ch.bfs.gebaeude_wohnungs_register,f;ch.bav.haltestellen-oev,f;ch.swisstopo.swisstlm3d-wanderwege,f;ch.vbs.schiessanzeigen,f;ch.astra.wanderland-sperrungen_umleitungen,f;KML%7Chttps://public.geo.admin.ch/api/kml/files/Q8VT2glYRCmPAb03Qp9XbQ&bgLayer=ch.swisstopo.pixelkarte-farbe&featureInfo=tooltip" target="_blank" class="btn secondary">
-              Perimeter auf GeoAdmin-Karte anzeigen
+              GeoAdmin-Karte anzeigen
             </a>
           </p>
           <small> Hinweis: Nur innerhalb dieses definierten Perimeters werden Daten aufgezeichnet.</small>
@@ -119,6 +123,8 @@
   </div>
 
   <!-- App Logic -->
+  <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
+
   <script src="app.js"></script>
 </body>
 </html>
