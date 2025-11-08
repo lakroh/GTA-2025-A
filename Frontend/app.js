@@ -173,6 +173,61 @@
     trajectoryCoords = [];
   }
 
+    /* Geolocation ------------------------------------------------------------ */
+
+    /* ---------------------- Buffer Handling -------------------------- */
+
+    let hazardBuffers = []; // Liste der Buffer-Polygone
+    let insideBuffer = false; // Status, ob Nutzer aktuell in einem Buffer ist
+
+    async function loadBuffers() {
+      try {
+        const response = await fetch('http://localhost:8989/get_buffers');
+        const geojson = await response.json();
+
+        // Buffer auf der Karte anzeigen
+        L.geoJSON(geojson, {
+          color: '#e03131',
+          weight: 1, // hier 0 einsetzen damit Buffer nicht sichtbar sind auf Karte
+          fillOpacity: 0.1 // hier 0 einsetzen damit Buffer nicht sichtbar sind auf Karte
+        }).addTo(map);
+
+        hazardBuffers = geojson.features;
+        console.log(`✅ ${hazardBuffers.length} Buffer geladen`);
+      } catch (err) {
+        console.error('❌ Fehler beim Laden der Buffer:', err);
+      }
+    }
+
+    function checkInsideBuffer(lat, lng) {
+      if (!hazardBuffers.length) return false;
+      const point = turf.point([lng, lat]);
+      return hazardBuffers.some(f => turf.booleanPointInPolygon(point, f));
+    }
+
+    function showBufferPopup() {
+      openModal();
+      const bufferHint = document.getElementById('buffer-hint');
+      if (bufferHint) bufferHint.hidden = false;
+      descInput.value = '';
+      descInput.placeholder = "z.B. Gefährliche Stelle mit Tram";
+    }
+
+
+    function openModal() {
+      lastFocusedBeforeModal = document.activeElement;
+      formError.textContent = '';
+      descInput.value = '';
+      levelInput.value = '2';
+      modal.hidden = false;
+      descInput.focus();
+
+      // Wenn Modal manuell geöffnet wurde (nicht durch Buffer)
+      const bufferHint = document.getElementById('buffer-hint');
+      if (bufferHint) bufferHint.hidden = true;
+    }
+
+
   /* Geolocation ------------------------------------------------------------ */
   async function startTracking() {
     if (!('geolocation' in navigator)) {
@@ -245,6 +300,8 @@
     updateStatus('Tracking beendet. Die aufgezeichnete Trajektorie bleibt sichtbar.');
   }
 
+  
+
   function onPosition(pos) {
     const { latitude, longitude, accuracy } = pos.coords;
     const latlng = { lat: latitude, lng: longitude };
@@ -261,7 +318,17 @@
     }
 
     updateStatus(`Letzte Position: ${fmtLatLng(latlng)} (±${Math.round(accuracy)} m)`);
+
+    // 🔹 Prüfen, ob innerhalb eines Buffer
+    const currentlyInside = checkInsideBuffer(latitude, longitude);
+    if (currentlyInside && !insideBuffer) {
+      insideBuffer = true;
+      showBufferPopup();
+    } else if (!currentlyInside) {
+      insideBuffer = false;
+    }
   }
+
 
   function onGeoError(err) {
     updateStatus('GPS Fehler');
@@ -269,14 +336,6 @@
   }
 
   /* Modal handling --------------------------------------------------------- */
-  function openModal() {
-    lastFocusedBeforeModal = document.activeElement;
-    formError.textContent = '';
-    descInput.value = '';
-    levelInput.value = '2';
-    modal.hidden = false;
-    descInput.focus();
-  }
 
   function closeModal() {
     modal.hidden = true;
@@ -327,6 +386,9 @@
   document.addEventListener('DOMContentLoaded', () => {
     initMap();
     updateStatus('Bereit.');
+    loadBuffers(); // 🔹 Buffer beim Start laden
+
+    
 
     // Intro-Modal anzeigen
     const introModal = document.getElementById('intro-modal');
@@ -413,4 +475,5 @@ function insertTrajectoryPoint(lat, lng, id, ts, trajectory_id) {
         + '</wfs:Transaction>';
 
   $.ajax({ type:"POST", url:wfs, contentType:"text/xml", data:postData });
+  
 }
