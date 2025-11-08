@@ -1,25 +1,21 @@
 from flask import Flask, jsonify
-import pandas as pd
+from flask_cors import CORS
+import psycopg2
 import geopandas as gpd
 from shapely.geometry import Point
-import psycopg2
 import json
+import pandas as pd
 
 app = Flask(__name__)
+CORS(app)
 
-# Endpoint to receive and store location data
+
 @app.route('/test_deploy', methods=['GET'])
 def test_deploy():
-    """
-    Funktion user to test the deployment of the app
-    """
     return jsonify({'message': 'Hello World!'}), 200
 
 @app.route('/', methods=['GET'])
 def home():
-    """
-    function to test the connection to the server
-    """
     return jsonify('Connection established'), 200
 
 @app.route('/test_data', methods=['GET'])
@@ -33,7 +29,7 @@ def test_data():
     conn = psycopg2.connect(**db_credentials)
     cur = conn.cursor()
 
-    cur.execute('SELECT * FROM "gta25_g1"."Fussgaenger_in_Polygon"')
+    cur.execute('SELECT * FROM "gta25_g1"."Fussgaenger_in_Polygon_copy"') #"Fussgaenger_in_Polygon" einsetzen für korrekte Tabelle -> _copy hat fake unfallstelle drin
 
     print('Data fetched')
     data = cur.fetchall()
@@ -41,6 +37,39 @@ def test_data():
     conn.close()
 
     return jsonify(data), 200
+
+
+@app.route('/get_buffers', methods=['GET'])
+def get_buffers():
+    """
+    Holt die Koordinaten aus der DB, erzeugt Buffer (z.B. 20 m Radius),
+    und gibt sie als GeoJSON zurück.
+    """
+    with open('db_login.json', 'r') as file:
+        db_credentials = json.load(file)
+
+    conn = psycopg2.connect(**db_credentials)
+    sql = 'SELECT "AccidentLocation_CHLV95_E", "AccidentLocation_CHLV95_N" FROM "gta25_g1"."Fussgaenger_in_Polygon_copy"'
+    df = pd.read_sql(sql, conn)
+    conn.close()
+
+    # Geometrie erzeugen (CH LV95 = EPSG:2056)
+    gdf = gpd.GeoDataFrame(
+        df,
+        geometry=gpd.points_from_xy(df["AccidentLocation_CHLV95_E"], df["AccidentLocation_CHLV95_N"]),
+        crs="EPSG:2056"
+    )
+
+    # Buffer von 20 m -> 7m als Vorschlag (Anpassen vor Abgabe)
+    gdf["geometry"] = gdf.buffer(20)
+
+    # In WGS84 umwandeln für Leaflet
+    gdf = gdf.to_crs("EPSG:4326")
+    
+
+    # GeoJSON zurückgeben
+    return gdf.to_json(), 200, {'Content-Type': 'application/json'}
+
 
 if __name__ == '__main__':
     app.run(port=8989, debug=True)
