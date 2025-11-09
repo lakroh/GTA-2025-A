@@ -63,12 +63,14 @@ def get_buffers():
     # Buffer von 20 m -> 7m als Vorschlag (Anpassen vor Abgabe)
     gdf["geometry"] = gdf.buffer(20)
 
-    # In WGS84 umwandeln für Leaflet
-    gdf = gdf.to_crs("EPSG:4326")
-    
+    # Überlappende Puffer zusammenfassen
+    merged = gdf.dissolve()  # automatisch union aller Geometrien
 
-    # GeoJSON zurückgeben
-    return gdf.to_json(), 200, {'Content-Type': 'application/json'}
+    # Zurück zu WGS84 (EPSG:4326)
+    merged = merged.to_crs("EPSG:4326")
+
+    # Als GeoJSON zurückgeben
+    return merged.to_json(), 200, {"Content-Type": "application/json"}
 
 
 if __name__ == '__main__':
