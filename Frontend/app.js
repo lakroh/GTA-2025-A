@@ -179,6 +179,8 @@
 
     let hazardBuffers = []; // Liste der Buffer-Polygone
     let insideBuffer = false; // Status, ob Nutzer aktuell in einem Buffer ist
+    let currentBufferId = null;   // für Cluster-Logik
+
 
     async function loadBuffers() {
       try {
@@ -199,11 +201,25 @@
       }
     }
 
-    function checkInsideBuffer(lat, lng) {
-      if (!hazardBuffers.length) return false;
+    //function checkInsideBuffer(lat, lng) {
+      //if (!hazardBuffers.length) return false;
+     // const point = turf.point([lng, lat]);
+     // return hazardBuffers.some(f => turf.booleanPointInPolygon(point, f));
+    //}
+
+    function getCurrentBufferId(lat, lng) {
+      if (!hazardBuffers.length) return null;
+
       const point = turf.point([lng, lat]);
-      return hazardBuffers.some(f => turf.booleanPointInPolygon(point, f));
+
+      for (let i = 0; i < hazardBuffers.length; i++) {
+        if (turf.booleanPointInPolygon(point, hazardBuffers[i])) {
+          return i; // ID des Clusters
+        }
+      }
+      return null; // nicht in einem Cluster
     }
+
 
     function showBufferPopup() {
       openModal();
@@ -230,6 +246,34 @@
 
   /* Geolocation ------------------------------------------------------------ */
   async function startTracking() {
+    // Wichtig: Buffer-Zustand zurücksetzen, sonst kommt kein Popup!
+    currentBufferId = null;
+    // Alte Trajektorie löschen
+    if (polyline) {
+      polyline.remove();
+    }
+    if (currentDot) {
+      currentDot.remove();
+    }
+
+    // Neue Trajektorie initialisieren
+    polyline = L.polyline([], {
+      color: '#3b5bdb',
+      weight: 4,
+      opacity: 0.8,
+      lineCap: 'round',
+      lineJoin: 'round'
+    }).addTo(map);
+
+    currentDot = L.circleMarker(INITIAL_CENTER, {
+      radius: 6,
+      color: '#3b5bdb',
+      fillColor: '#3b5bdb',
+      fillOpacity: 0.9,
+      opacity: 1,
+      weight: 0
+    }).addTo(map);
+
     if (!('geolocation' in navigator)) {
       updateStatus('Geolokalisierung wird nicht unterstützt.');
       return;
@@ -319,14 +363,19 @@
 
     updateStatus(`Letzte Position: ${fmtLatLng(latlng)} (±${Math.round(accuracy)} m)`);
 
-    // 🔹 Prüfen, ob innerhalb eines Buffer
-    const currentlyInside = checkInsideBuffer(latitude, longitude);
-    if (currentlyInside && !insideBuffer) {
-      insideBuffer = true;
+    const bufferId = getCurrentBufferId(latitude, longitude);
+
+    // Wenn Nutzer einen neuen Cluster betritt → Popup
+    if (bufferId !== null && bufferId !== currentBufferId) {
+      currentBufferId = bufferId;
       showBufferPopup();
-    } else if (!currentlyInside) {
-      insideBuffer = false;
     }
+
+    // Wenn Nutzer alle Cluster verlässt
+    if (bufferId === null) {
+      currentBufferId = null;
+    }
+
   }
 
 
