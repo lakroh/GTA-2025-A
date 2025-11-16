@@ -60,17 +60,25 @@ def get_buffers():
         crs="EPSG:2056"
     )
 
-    # Buffer von 20 m -> 7m als Vorschlag (Anpassen vor Abgabe)
-    gdf["geometry"] = gdf.buffer(20)
+    # 7m als Vorschlag (Anpassen vor Abgabe)
+    gdf["geometry"] = gdf.buffer(7)
 
-    # Überlappende Puffer zusammenfassen
-    merged = gdf.dissolve()  # automatisch union aller Geometrien
+    union = gdf.unary_union
 
-    # Zurück zu WGS84 (EPSG:4326)
-    merged = merged.to_crs("EPSG:4326")
+    # ⚡ 2) Falls MultiPolygon, in einzelne Polygone aufteilen
+    if union.geom_type == "Polygon":
+        geoms = [union]
+    else:
+        geoms = list(union.geoms)
 
-    # Als GeoJSON zurückgeben
-    return merged.to_json(), 200, {"Content-Type": "application/json"}
+    # ⚡ 3) GeoDataFrame aus Clustern bauen
+    merged_gdf = gpd.GeoDataFrame(geometry=geoms, crs="EPSG:2056")
+
+    # WGS84 für Leaflet
+    merged_gdf = merged_gdf.to_crs("EPSG:4326")
+
+    # ⚡ 4) GeoJSON zurückgeben
+    return merged_gdf.to_json(), 200, {"Content-Type": "application/json"}
 
 
 if __name__ == '__main__':
