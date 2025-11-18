@@ -105,7 +105,7 @@ def get_heatmap():
                 ST_Y(geom) AS lat,
                 ST_X(geom) AS lon,
                 COALESCE(severity, 1) AS weight
-            FROM poi_event
+            FROM gta25_g1.poi_event
             WHERE geom IS NOT NULL;
         """
 
