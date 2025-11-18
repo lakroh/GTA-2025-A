@@ -29,8 +29,11 @@
       <button id="toggle-track" class="btn primary" aria-pressed="false">
         Trajektorie aufzeichnen
       </button>
-      <button id="save-hazard" class="btn secondary">
+      <button id="save-hazard" class="btn secondary" disabled>
         Gefahrenstelle speichern
+      </button>
+      <button id="toggle-heatmap" class="btn secondary">
+        Heatmap anzeigen
       </button>
     </div>
 
@@ -112,7 +115,7 @@
               GeoAdmin-Karte anzeigen
             </a>
           </p>
-          <small> Hinweis: Nur innerhalb dieses definierten Perimeters werden Daten aufgezeichnet.</small>
+          <small> Hinweis: Nur Daten innerhalb dieses definierten Perimeters sind für die Auswertung relevant.</small>
         </div>
       </div>
 
@@ -122,10 +125,35 @@
     </div>
   </div>
 
+  <!-- Modal: Heatmap anzeigen ------------------------------------------------ -->
+  <div id="heatmap-modal" class="modal" role="dialog" aria-modal="true" hidden>
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2>Heatmap anzeigen?</h2>
+      </div>
+
+      <div class="modal-body">
+        <p>Möchtest du die Heatmap aller gemeldeten Gefahrenstellen sehen?</p>
+      </div>
+
+      <div class="modal-actions">
+        <button id="heatmap-no" class="btn secondary">Nein</button>
+        <button id="heatmap-yes" class="btn primary">Ja</button>
+      </div>
+    </div>
+  </div>
+
+
   <!-- App Logic -->
+  <!-- Heatmap Plugin (muss direkt unter Leaflet stehen!) -->
+  <script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
+
+  <!-- Turf JS -->
   <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
 
+  <!-- Deine App -->
   <script src="app.js"></script>
+
 </body>
 </html>
 
