@@ -91,6 +91,41 @@ def get_buffers():
     # 10) GeoJSON zurückgeben
     return merged_gdf.to_json(), 200, {"Content-Type": "application/json"}
 
+@app.route("/heatmap", methods=["GET"])
+def get_heatmap():
+    try:
+        with open('db_login.json', 'r') as file:
+            cred = json.load(file)
+
+        conn = psycopg2.connect(**cred)
+        cur = conn.cursor()
+
+        query = """
+            SELECT 
+                ST_Y(geom) AS lat,
+                ST_X(geom) AS lon,
+                COALESCE(severity, 1) AS weight
+            FROM poi_event
+            WHERE geom IS NOT NULL;
+        """
+
+        cur.execute(query)
+        rows = cur.fetchall()
+
+        cur.close()
+        conn.close()
+
+        data = [
+            {"lat": r[0], "lon": r[1], "weight": float(r[2])}
+            for r in rows
+        ]
+
+        return jsonify(data), 200
+
+    except Exception as e:
+        print("HEATMAP ERROR:", e)
+        return jsonify({"error": str(e)}), 500
+
 
 if __name__ == '__main__':
     app.run(port=8989, debug=True)
