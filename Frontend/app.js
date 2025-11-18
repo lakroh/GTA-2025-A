@@ -18,6 +18,14 @@
   const levelInput = document.getElementById('level');
   const formError = document.getElementById('form-error');
 
+  const heatmapModal = document.getElementById("heatmap-modal");
+  const heatmapYes = document.getElementById("heatmap-yes");
+  const heatmapNo = document.getElementById("heatmap-no");
+
+  const heatmapToggleBtn = document.getElementById("toggle-heatmap");
+
+
+
   // Map & tracking state
   let map, tileLayer;
   let isTracking = false;
@@ -33,6 +41,12 @@
 
   // Modal focus handling
   let lastFocusedBeforeModal = null;
+
+  let heatLayer = null;
+  let heatmapVisible = false;
+
+  let perimeterPolygon = null;
+
 
   /* Utilities -------------------------------------------------------------- */
   function updateStatus(message) {
@@ -201,6 +215,84 @@
       }
     }
 
+    async function loadHeatmap() {
+      try {
+        const response = await fetch("http://localhost:8989/heatmap");
+        const data = await response.json();
+
+        const heatData = data.map(p => [
+          p.lat,
+          p.lon,
+          Math.max(0.05, p.weight / 4)   // severity=0 leicht sichtbar
+        ]);
+
+        // 🔹 Filter: nur Punkte innerhalb project_area
+        if (perimeterPolygon) {
+          const filtered = [];
+
+          for (const h of heatData) {
+            const pt = turf.point([h[1], h[0]]);   // Turf: [lng, lat]
+            if (turf.booleanPointInPolygon(pt, perimeterPolygon)) {
+              filtered.push(h);
+            }
+          }
+
+          console.log("Heatmap gefiltert:", filtered.length, "von", heatData.length);
+
+          heatData.length = 0;
+          heatData.push(...filtered);
+        }
+
+
+        const heatmapOptions = {
+          radius: 35,
+          blur: 20,
+          maxZoom: 17,
+          gradient: {
+            0.0: "#00ff00",  // Grün – Severity 0
+            0.25: "#a8ff00", // Gelbgrün – Severity 1
+            0.5: "#ffff00",  // Gelb – Severity 2
+            0.75: "#ff6600", // Orange – Severity 3
+            1.0: "#ff0000"   // Rot – Severity 4
+          }
+        };
+
+        if (!heatLayer) {
+          // Heatmap existiert noch nicht → komplett neu erzeugen
+          heatLayer = L.heatLayer(heatData, heatmapOptions);
+        }
+        else if (heatmapVisible) {
+          // Heatmap ist sichtbar → sicher aktualisieren
+          heatLayer.setLatLngs(heatData);
+        }
+        else {
+          // Heatmap existiert, ist aber nicht sichtbar
+          heatLayer = L.heatLayer(heatData, heatmapOptions);
+        }
+
+        console.log("🔥 Heatmap geladen:", heatData.length, "Punkte");
+
+      } catch (err) {
+        console.error("❌ Fehler beim Laden der Heatmap:", err);
+      }
+    }
+
+
+
+    function toggleHeatmap() {
+      if (!heatLayer) return;
+
+      if (!heatmapVisible) {
+        heatLayer.addTo(map);
+        heatmapVisible = true;
+      } else {
+        map.removeLayer(heatLayer);
+        heatmapVisible = false;
+      }
+    }
+
+
+
     //function checkInsideBuffer(lat, lng) {
       //if (!hazardBuffers.length) return false;
      // const point = turf.point([lng, lat]);
@@ -246,6 +338,17 @@
 
   /* Geolocation ------------------------------------------------------------ */
   async function startTracking() {
+    // Heatmap immer deaktivieren, wenn eine neue Trajektorie startet
+    if (heatLayer && heatmapVisible) {
+      map.removeLayer(heatLayer);
+      heatmapVisible = false;
+      heatmapToggleBtn.textContent = "Heatmap anzeigen";
+    }
+
+// Heatmap-Button deaktivieren
+heatmapToggleBtn.classList.add("disabled");
+
+
     // Wichtig: Buffer-Zustand zurücksetzen, sonst kommt kein Popup!
     currentBufferId = null;
     // Alte Trajektorie löschen
@@ -285,6 +388,9 @@
 
     setTrackingUI(true);
     updateStatus('Tracking gestartet …');
+    hazardBtn.disabled = false;   // Button aktivieren
+    hazardBtn.classList.remove("disabled"); 
+
 
     // 🔹 ERSTEN Punkt sofort speichern (started_at)
     navigator.geolocation.getCurrentPosition((pos) => {
@@ -342,6 +448,18 @@
 
     setTrackingUI(false);
     updateStatus('Tracking beendet. Die aufgezeichnete Trajektorie bleibt sichtbar.');
+    hazardBtn.disabled = true;   // Button deaktivieren
+    hazardBtn.classList.add("disabled");
+
+
+
+    // Heatmap-Auswahl anzeigen
+    if (heatmapModal) heatmapModal.hidden = false;
+
+    // Heatmap-Button wieder aktivieren
+    heatmapToggleBtn.classList.remove("disabled");
+
+
   }
 
   
@@ -431,11 +549,55 @@
   cancelModalBtn.addEventListener('click', closeModal);
   hazardForm.addEventListener('submit', onModalSubmit);
 
+  heatmapToggleBtn.addEventListener("click", async () => {
+    if (isTracking) return; // Sicherheit: keine Heatmap während Tracking
+
+    if (!heatmapVisible) {
+      await loadHeatmap();
+      heatLayer.addTo(map);
+      heatmapVisible = true;
+      heatmapToggleBtn.textContent = "Heatmap ausblenden";
+    } else {
+      map.removeLayer(heatLayer);
+      heatmapVisible = false;
+      heatmapToggleBtn.textContent = "Heatmap anzeigen";
+    }
+  });
+
+
+
+  heatmapYes.addEventListener("click", async () => {
+    heatmapModal.hidden = true;
+    await loadHeatmap();
+    if (!heatmapVisible) {
+      heatLayer.addTo(map);
+      heatmapVisible = true;
+      heatmapToggleBtn.textContent = "Heatmap ausblenden";
+    }
+  });
+
+  heatmapNo.addEventListener("click", () => {
+    heatmapModal.hidden = true;
+  });
+
+
   /* Boot ------------------------------------------------------------------- */
   document.addEventListener('DOMContentLoaded', () => {
     initMap();
     updateStatus('Bereit.');
     loadBuffers(); // 🔹 Buffer beim Start laden
+    hazardBtn.disabled = true;
+
+    // 🔹 Perimeter laden
+    fetch("project_area.geojson")
+      .then(r => r.json())
+      .then(geo => {
+        perimeterPolygon = geo.features[0];     // Erstes Polygon aus project_area
+        console.log("Perimeter geladen:", perimeterPolygon);
+      })
+      .catch(err => console.error("❌ Fehler beim Laden des Perimeters:", err));
+
+
 
     
 
