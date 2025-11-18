@@ -91,6 +91,7 @@ def get_buffers():
     # 10) GeoJSON zurückgeben
     return merged_gdf.to_json(), 200, {"Content-Type": "application/json"}
 
+
 @app.route("/heatmap", methods=["GET"])
 def get_heatmap():
     try:
@@ -125,6 +126,8 @@ def get_heatmap():
     except Exception as e:
         print("HEATMAP ERROR:", e)
         return jsonify({"error": str(e)}), 500
+
+
 
 
 if __name__ == '__main__':
