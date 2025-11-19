@@ -220,18 +220,21 @@
         const response = await fetch("http://localhost:8989/heatmap");
         const data = await response.json();
 
-        const heatData = data.map(p => [
-          p.lat,
-          p.lon,
-          Math.max(0.05, p.weight / 4)   // severity=0 leicht sichtbar
-        ]);
+        // 🔹 FILTER: Punkte mit weight = 0 werden entfernt
+        const heatData = data
+          .filter(p => p.weight > 0)          // <-- wichtig!
+          .map(p => [
+            p.lat,
+            p.lon,
+            p.weight / 4                          // Gewichtung 1–4 direkt
+          ]);
 
-        // 🔹 Filter: nur Punkte innerhalb project_area
+        // 🔹 Zusätzlich: nur Punkte innerhalb des Perimeters
         if (perimeterPolygon) {
           const filtered = [];
 
           for (const h of heatData) {
-            const pt = turf.point([h[1], h[0]]);   // Turf: [lng, lat]
+            const pt = turf.point([h[1], h[0]]); // [lng, lat]
             if (turf.booleanPointInPolygon(pt, perimeterPolygon)) {
               filtered.push(h);
             }
@@ -239,34 +242,29 @@
 
           console.log("Heatmap gefiltert:", filtered.length, "von", heatData.length);
 
+
           heatData.length = 0;
           heatData.push(...filtered);
         }
-
 
         const heatmapOptions = {
           radius: 35,
           blur: 20,
           maxZoom: 17,
           gradient: {
-            0.0: "#00ff00",  // Grün – Severity 0
-            0.25: "#a8ff00", // Gelbgrün – Severity 1
-            0.5: "#ffff00",  // Gelb – Severity 2
-            0.75: "#ff6600", // Orange – Severity 3
-            1.0: "#ff0000"   // Rot – Severity 4
+            0.0: "#00ff00",
+            0.25: "#a8ff00",
+            0.5: "#ffff00",
+            0.75: "#ff6600",
+            1.0: "#ff0000"
           }
         };
 
         if (!heatLayer) {
-          // Heatmap existiert noch nicht → komplett neu erzeugen
           heatLayer = L.heatLayer(heatData, heatmapOptions);
-        }
-        else if (heatmapVisible) {
-          // Heatmap ist sichtbar → sicher aktualisieren
+        } else if (heatmapVisible) {
           heatLayer.setLatLngs(heatData);
-        }
-        else {
-          // Heatmap existiert, ist aber nicht sichtbar
+        } else {
           heatLayer = L.heatLayer(heatData, heatmapOptions);
         }
 
@@ -276,6 +274,7 @@
         console.error("❌ Fehler beim Laden der Heatmap:", err);
       }
     }
+
 
 
 
