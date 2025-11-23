@@ -43,6 +43,7 @@ def test_data():
 
 
 @app.route('/get_buffers', methods=['GET'])
+@app.route('/app/test_deploy/get_buffers', methods=['GET'])
 def get_buffers():
 
     # 1) DB Credentials laden
@@ -96,6 +97,7 @@ def get_buffers():
 
 
 @app.route("/heatmap", methods=["GET"])
+@app.route("/app/test_deploy/heatmap", methods=["GET"])
 def get_heatmap():
     try:
         with open('db_login.json', 'r') as file:
