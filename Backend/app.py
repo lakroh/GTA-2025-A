@@ -9,6 +9,9 @@ import pandas as pd
 app = Flask(__name__)
 CORS(app)
 
+def create_app():
+    return app
+
 
 @app.route('/test_deploy', methods=['GET'])
 def test_deploy():
