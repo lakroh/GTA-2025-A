@@ -198,7 +198,8 @@
 
     async function loadBuffers() {
       try {
-        const response = await fetch('http://localhost:8989/get_buffers');
+        //const response = await fetch('http://localhost:8989/get_buffers');
+        const response = await fetch('https://gta25aprd.ethz.ch/app/test_deploy/get_buffers');
         const geojson = await response.json();
 
         // Buffer auf der Karte anzeigen
@@ -217,7 +218,8 @@
 
     async function loadHeatmap() {
       try {
-        const response = await fetch("http://localhost:8989/heatmap");
+        //const response = await fetch("http://localhost:8989/heatmap");
+        const response = await fetch("https://gta25aprd.ethz.ch/app/test_deploy/heatmap");
         const data = await response.json();
 
         // 🔹 FILTER: Punkte mit weight = 0 werden entfernt
@@ -687,3 +689,4 @@ function insertTrajectoryPoint(lat, lng, id, ts, trajectory_id) {
   $.ajax({ type:"POST", url:wfs, contentType:"text/xml", data:postData });
   
 }
+
