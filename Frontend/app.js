@@ -263,8 +263,8 @@ const loggedInAsEl = document.getElementById("logged-in-as");
 
     async function loadBuffers() {
       try {
-        const response = await fetch('http://localhost:8989/get_buffers');
-        //const response = await fetch('https://gta25aprd.ethz.ch/app/get_buffers');
+        //const response = await fetch('http://localhost:8989/get_buffers');
+        const response = await fetch('https://gta25aprd.ethz.ch/app/get_buffers');
         const geojson = await response.json();
 
         // Buffer auf der Karte anzeigen
@@ -283,8 +283,8 @@ const loggedInAsEl = document.getElementById("logged-in-as");
 
     async function loadHeatmap() {
       try {
-        const response = await fetch("http://localhost:8989/heatmap");
-        //const response = await fetch("https://gta25aprd.ethz.ch/app/heatmap");
+        //const response = await fetch("http://localhost:8989/heatmap");
+        const response = await fetch("https://gta25aprd.ethz.ch/app/heatmap");
         const data = await response.json();
 
         // 🔹 FILTER: Punkte mit weight = 0 werden entfernt
@@ -886,9 +886,10 @@ const loggedInAsEl = document.getElementById("logged-in-as");
   
 
   /* -------------------- LOGIN / REGISTER LOGIK ---------------------- */
-
+  // localhost LogIn http://localhost:8989/login
+  //https://gta25aprd.ethz.ch/app/
   async function loginUser(username, password) {
-    const res = await fetch("http://localhost:8989/login", {
+    const res = await fetch("https://gta25aprd.ethz.ch/app/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username, password })
@@ -898,9 +899,10 @@ const loggedInAsEl = document.getElementById("logged-in-as");
     if (!data.success) return null;
     return data.user_id;
   }
+  // localhost: http://localhost:8989/register
 
   async function registerUser(username, password) {
-    const res = await fetch("http://localhost:8989/register", {
+    const res = await fetch("https://gta25aprd.ethz.ch/app/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username, password })
@@ -1047,8 +1049,8 @@ const loggedInAsEl = document.getElementById("logged-in-as");
   async function loadUserTrajectories() {
     const list = document.getElementById("profile-trajectories");
     list.innerHTML = "Loading...";
-
-    const res = await fetch(`http://localhost:8989/user_trajectories/${CURRENT_USER_ID}`);
+  // localhost version: http://localhost:8989/user_trajectories/${CURRENT_USER_ID}
+    const res = await fetch(`https://gta25aprd.ethz.ch/app/user_trajectories/${CURRENT_USER_ID}`);
     const data = await res.json();
 
     if (!data.length) {
@@ -1080,7 +1082,8 @@ const loggedInAsEl = document.getElementById("logged-in-as");
     const ptsList = document.getElementById("traj-points-list");
 
     // Details vom Backend holen
-    const res = await fetch(`http://localhost:8989/trajectory_details/${trajId}`);
+    // localhost version: http://localhost:8989/trajectory_details/${trajId}
+    const res = await fetch(`https://gta25aprd.ethz.ch/app/trajectory_details/${trajId}`);
     const data = await res.json();
 
     // Dauer
@@ -1428,3 +1431,4 @@ async function saveTrajectoryGeometryToDB(points, trajectory_id) {
     body: postData
   });
 }
+
