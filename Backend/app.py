@@ -1,10 +1,11 @@
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 from flask_cors import CORS
 import psycopg2
 import geopandas as gpd
 from shapely.geometry import Point
 import json
 import pandas as pd
+import hashlib
 
 app = Flask(__name__)
 CORS(app)
@@ -32,7 +33,7 @@ def test_data():
     conn = psycopg2.connect(**db_credentials)
     cur = conn.cursor()
 
-    cur.execute('SELECT * FROM "gta25_g1"."Fussgaenger_in_Polygon_copy"') #"Fussgaenger_in_Polygon" einsetzen für korrekte Tabelle -> _copy hat fake unfallstelle drin
+    cur.execute('SELECT * FROM "gta25_g1"."Fussgaenger_in_Polygon_copy"')
 
     print('Data fetched')
     data = cur.fetchall()
@@ -131,6 +132,129 @@ def get_heatmap():
     except Exception as e:
         print("HEATMAP ERROR:", e)
         return jsonify({"error": str(e)}), 500
+
+
+
+
+
+# DB Login
+with open("db_login.json") as f:
+    cfg = json.load(f)
+
+def get_conn():
+    return psycopg2.connect(
+        dbname=cfg["database"],
+        user=cfg["user"],
+        password=cfg["password"],
+        host=cfg["host"],
+        port=cfg["port"]
+    )
+
+def hash_pw(pw):
+    return hashlib.sha256(pw.encode()).hexdigest()
+
+@app.post("/register")
+def register():
+    data = request.get_json()
+    username = data["username"]
+    pw_hash = hash_pw(data["password"])
+
+    conn = get_conn()
+    cur = conn.cursor()
+
+    cur.execute("SELECT user_id FROM users WHERE username=%s", (username,))
+    if cur.fetchone():
+        return jsonify({"success": False, "error": "exists"})
+
+    cur.execute(
+        "INSERT INTO users (username, password_hash) VALUES (%s, %s) RETURNING user_id",
+        (username, pw_hash)
+    )
+    user_id = cur.fetchone()[0]
+    conn.commit()
+
+    return jsonify({"success": True, "user_id": user_id})
+
+@app.post("/login")
+def login():
+    data = request.get_json()
+    username = data["username"]
+    pw_hash = hash_pw(data["password"])
+
+    conn = get_conn()
+    cur = conn.cursor()
+
+    cur.execute(
+        "SELECT user_id FROM users WHERE username=%s AND password_hash=%s",
+        (username, pw_hash)
+    )
+    row = cur.fetchone()
+    if not row:
+        return jsonify({"success": False})
+
+    return jsonify({"success": True, "user_id": row[0]})
+
+
+@app.route("/user_trajectories/<int:user_id>")
+def user_trajectories(user_id):
+    conn = get_conn()
+    cur = conn.cursor()
+
+    cur.execute("""
+        SELECT id, started_at, ended_at
+        FROM trajectory
+        WHERE user_id = %s
+        ORDER BY started_at DESC
+    """, (user_id,))
+
+    rows = cur.fetchall()
+
+    trajectories = [{
+        "id": r[0],
+        "started_at": r[1].isoformat(),
+        "ended_at": r[2].isoformat() if r[2] else None
+    } for r in rows]
+
+    cur.close()
+    conn.close()
+    return jsonify(trajectories)
+
+
+@app.route("/trajectory_details/<int:traj_id>")
+def trajectory_details(traj_id):
+    conn = get_conn()
+    cur = conn.cursor()
+
+    # 1. Metadaten
+    cur.execute("""
+        SELECT id, started_at, ended_at
+        FROM trajectory
+        WHERE id = %s
+    """, (traj_id,))
+    t = cur.fetchone()
+
+    # 2. Punkte
+    cur.execute("""
+        SELECT lat, lng, ts
+        FROM trajectory_point
+        WHERE trajectory_id = %s
+        ORDER BY ts ASC
+    """, (traj_id,))
+    pts = cur.fetchall()
+
+    cur.close()
+    conn.close()
+
+    return jsonify({
+        "id": t[0],
+        "started_at": t[1].isoformat(),
+        "ended_at": t[2].isoformat(),
+        "points": [{
+            "lat": p[0],
+            "lng": p[1],
+            "ts": p[2].isoformat()
+        } for p in pts]
+    })
 
 
 
