@@ -12,28 +12,124 @@
     integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
     crossorigin=""
   />
-  <script src="https://code.jquery.com/jquery-3.7.1.js" integrity="sha256-eKhayi8LEQwp4NKxN+CfCh+3qOVUtJn3QNZ0TciWLP4=" crossorigin="anonymous"></script>
+
+  <script 
+    src="https://code.jquery.com/jquery-3.7.1.js" 
+    integrity="sha256-eKhayi8LEQwp4NKxN+CfCh+3qOVUtJn3QNZ0TciWLP4=" 
+    crossorigin="anonymous">
+  </script>
 
   <!-- App Styles -->
   <link rel="stylesheet" href="styles.css" />
 </head>
+
 <body>
+  <!-- AUTH MODAL (LOGIN + REGISTER) -->
+  <div id="auth-modal" class="modal" role="dialog" aria-modal="true" hidden> <!--hier hidden damit nich jedes mal kommt-->
+    <div class="modal-card">
+      <button id="auth-close" class="icon-btn auth-close-btn" aria-label="Close">×</button>
+
+      <!-- LOGIN FORM -->
+      <div id="login-view">
+        <div class="modal-header">
+          <h2>Login</h2>
+        </div>
+
+        <div class="modal-body">
+          <div class="field">
+            <label for="login-username">Username</label>
+            <input id="login-username" type="text" autocomplete="username" required>
+          </div>
+
+          <div class="field">
+            <label for="login-password">Password</label>
+            <input id="login-password" type="password" autocomplete="current-password" required>
+          </div>
+
+          <p id="auth-error" class="form-error"></p>
+
+          <div class="modal-actions">
+            <button id="login-btn" class="btn primary">Login</button>
+          </div>
+
+          <p style="text-align:center; margin-top:10px;">
+            No account yet?
+            <button id="show-register" class="btn secondary" style="padding:6px 10px; font-size:14px;">
+              Register
+            </button>
+          </p>
+        </div>
+      </div>
+
+
+      <!-- REGISTER FORM -->
+      <div id="register-view" hidden>
+        <div class="modal-header">
+          <h2>Register</h2>
+        </div>
+
+        <div class="modal-body">
+          <div class="field">
+            <label for="register-username">Choose a Username</label>
+            <input id="register-username" type="text" autocomplete="username" required>
+          </div>
+
+          <div class="field">
+            <label for="register-password">Choose a Password</label>
+            <input id="register-password" type="password" autocomplete="new-password" required>
+          </div>
+
+          <p id="register-error" class="form-error"></p>
+
+          <div class="modal-actions">
+            <button id="register-btn" class="btn primary">Create Account</button>
+          </div>
+
+          <p style="text-align:center; margin-top:10px;">
+            Already an account?
+            <button id="show-login" class="btn secondary" style="padding:6px 10px; font-size:14px;">
+              Login
+            </button>
+          </p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+
   <header class="app-header" role="banner">
+    <!-- Hilfe-Button oben rechts -->
+    <button id="help-btn" class="help-btn" aria-label="Help">?</button>
+
+    <!-- Persönliche Angaben Button -->
+    <button id="profile-btn" class="profile-btn" aria-label="Personal information">
+      👤
+    </button>
+
+    <!-- Titel -->
     <h1>LumaTrace</h1>
+
+    <!-- Login darunter zentriert -->
+    <div class="auth-center">
+      <span id="logged-in-as" class="logged-in-as" hidden></span>
+      <button id="auth-toggle-btn" class="btn small-btn">Login</button>
+    </div>
   </header>
+
 
   <main class="app-main" role="main" aria-label="Kartenansicht und Steuerung">
     <div id="map" aria-label="OpenStreetMap Karte"></div>
 
     <div class="controls" role="group" aria-label="Tracking-Steuerung">
       <button id="toggle-track" class="btn primary" aria-pressed="false">
-        Trajektorie aufzeichnen
+        Start trajectory
       </button>
       <button id="save-hazard" class="btn secondary" disabled>
-        Gefahrenstelle speichern
+        Save danger spot
       </button>
       <button id="toggle-heatmap" class="btn secondary">
-        Heatmap anzeigen
+        Show heat map
       </button>
     </div>
 
@@ -41,122 +137,280 @@
   </main>
 
   <footer class="app-footer" role="contentinfo">
-    Erstellt von Gruppe A / Kurs GTA / ETHZ – © 2025
+    created by group A / course GTA / ETHZ – © 2025
   </footer>
 
-  <!-- Modal: Gefahrenstelle ------------------------------------------------ -->
+  <!-- Modal: Gefahrenstelle -->
   <div id="hazard-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" hidden>
     <div class="modal-card">
       <div class="modal-header">
-        <h2 id="modal-title">Gefahrenstelle speichern</h2>
-        <button id="modal-close" class="icon-btn" aria-label="Schließen (Esc)">
-          ×
-        </button>
+        <h2 id="modal-title">Save danger spot</h2>
+        <button id="modal-close" class="icon-btn" aria-label="Schließen (Esc)">×</button>
       </div>
 
       <form id="hazard-form" class="modal-body" novalidate>
-        <!-- 🚨 Hinweis für frühere Unfallstelle -->
         <p id="buffer-hint" class="hint" style="color:#b42318; font-weight:600;" hidden>
-          ⚠️ Hinweis: Du befindest dich in der Nähe einer früheren Unfallstelle.</p>
+          ⚠️ Note: You are near the site of a previous accident.
+        </p>
+
         <div class="field">
-          <label for="desc">Beschreibung</label>
-          <input id="desc" name="desc" type="text" placeholder="z.B. Gefährliche Stelle mit Tram" autocomplete="off" required />
-          <small class="hint">Kurze, prägnante Beschreibung.</small>
+          <label for="desc">Description</label>
+
+          <select id="desc" name="desc" required>
+            <option value="" disabled selected>Please select a danger type</option>
+            <option value="danger involving bicycle">danger involving bicycle</option>
+            <option value="danger involving tram">danger involving tram</option>
+            <option value="danger involving car">danger involving car</option>
+            <option value="dangerous streetcrossing">dangerous streetcrossing</option>
+          </select>
+
+          <small class="hint">Select the type of danger</small>
         </div>
 
+
         <div class="field two-col">
-          <div>
-            <label for="level">Gefährlichkeitsstufe (0–4)</label>
-            <input id="level" name="level" type="number" inputmode="numeric" min="0" max="4" step="1" required />
+          <div class="slider-container">
+            <label for="level">Dangerousness level</label>
+
+            <input 
+              type="range"
+              id="level"
+              name="level"
+              min="0"
+              max="4"
+              step="1"
+              value="2"
+            />
+
+            <!-- Anzeige des aktuellen Wertes -->
+            <div class="slider-value">
+            </div>
+
+            <!-- Achsenbeschriftung -->
+            <div class="slider-labels">
+              <span>0</span>
+              <span>1</span>
+              <span>2</span>
+              <span>3</span>
+              <span>4</span>
+            </div>
           </div>
+
           <div class="legend" aria-live="polite">
-            <span><strong>0</strong> – nicht gefährlich</span>
-            <span><strong>2</strong> – mittel</span>
-            <span><strong>4</strong> – extrem gefährlich</span>
+            <span><strong>0</strong> – not dangerous</span>
+            <span><strong>2</strong> – medium</span>
+            <span><strong>4</strong> – very dangerous</span>
           </div>
         </div>
 
         <p id="form-error" class="form-error" role="alert" aria-live="assertive"></p>
 
         <div class="modal-actions">
-          <button type="button" class="btn secondary" id="cancel-modal">Abbrechen</button>
-          <button type="submit" class="btn primary" id="save-modal">Speichern</button>
+          <button type="button" class="btn secondary" id="cancel-modal">Don't save</button>
+          <button type="submit" class="btn primary" id="save-modal">Save</button>
         </div>
       </form>
     </div>
   </div>
 
-  <!-- Leaflet JS (CDN) -->
+  <!-- Modal: Start-Info -->
+  <div id="intro-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="intro-title" hidden>
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2 id="intro-title">Welcome to LumaTrace</h2>
+      </div>
+
+      <div class="modal-body">
+        <p><strong>Instruction manual:</strong></p>
+        <ul>
+          <li>Press "Start trajectory" to start your movement.</li>
+          <li>If you notice a <em>danger spot in traffic</em>, click on "Save danger spot."</li>
+          <li>Rate the position from 0–4 and provide a brief description.</li>
+          <li>If you come to a previous accident site, a pop-up window will automatically appear asking you to rate it.</li>
+        </ul>
+
+        <hr style="margin: 12px 0; opacity: 0.5;">
+
+        <p><strong>Purpose of this app:</strong></p>
+        <p>
+          This app is part of a research project aiming to improve pedestrian safety.  
+          We study whether places that <em>feel</em> dangerous are also locations where accidents occur.  
+          Your ratings help us understand risk patterns and support safer walking environments.
+        </p>
+
+        <p>The app is intended specifically for pedestrians.</p>
+
+        <p><strong>Need help? Contact us:</strong></p>
+        <p>
+          If you encounter any problems or have feedback, reach out:<br>
+          📧 <a href="mailto:luma@ethz.ch">luma@ethz.ch</a>
+        </p>
+
+        <hr style="margin: 12px 0; opacity: 0.5;">
+
+        <div class="perimeter-info">
+          <p><strong>Perimeter:</strong></p>
+          <p>
+            <a 
+              href="https://map.geo.admin.ch/#/map?lang=de&center=2683267.83,1247945.82&z=9.245&topic=ech&layers=ch.swisstopo.zeitreihen@year=1864,f;ch.bfs.gebaeude_wohnungs_register,f;ch.bav.haltestellen-oev,f;ch.swisstopo.swisstlm3d-wanderwege,f;ch.vbs.schiessanzeigen,f;ch.astra.wanderland-sperrungen_umleitungen,f;KML%7Chttps://public.geo.admin.ch/api/kml/files/Q8VT2glYRCmPAb03Qp9XbQ&bgLayer=ch.swisstopo.pixelkarte-farbe&featureInfo=tooltip"
+              target="_blank"
+              class="btn secondary"
+            >
+              Show perimeter
+            </a>
+          </p>
+          <small>Note: Only data within this defined perimeter is relevant for the evaluation.</small>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button id="intro-close" class="btn primary">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Heatmap anzeigen -->
+  <div id="heatmap-modal" class="modal" role="dialog" aria-modal="true" hidden>
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2>Next step</h2>
+      </div>
+
+      <div class="modal-body">
+        <p>What would you like to do?</p>
+      </div>
+
+      <div class="modal-actions">
+        <button id="heatmap-profile" class="btn secondary">Personal info</button>
+        <button id="heatmap-no" class="btn secondary">Close</button>
+        <button id="heatmap-yes" class="btn primary">Show heat map</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Trajectory Stop Confirmation -->
+  <div id="trajectory-stop-modal" class="modal" role="dialog" aria-modal="true" hidden>
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2>Finish trajectory?</h2>
+      </div>
+
+      <div class="modal-body">
+        <p>Do you want to save the current trajectory, delete it, or continue recording?</p>
+      </div>
+
+      <div class="modal-actions">
+        <button id="traj-continue" class="btn secondary">Continue</button>
+        <button id="traj-delete" class="btn secondary">Delete</button>
+        <button id="traj-save" class="btn primary">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Logout confirmation -->
+  <div id="logout-modal" class="modal" role="dialog" aria-modal="true" hidden>
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2>Logout successful</h2>
+      </div>
+
+      <div class="modal-body">
+        <p>You have been logged out.</p>
+      </div>
+
+      <div class="modal-actions">
+        <button id="logout-ok" class="btn primary">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Login required -->
+  <div id="login-required-modal" class="modal" role="dialog" aria-modal="true" hidden>
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2>Login required</h2>
+      </div>
+
+      <div class="modal-body">
+        <p>You must be logged in to start recording a trajectory.</p>
+      </div>
+
+      <div class="modal-actions">
+        <button id="login-required-ok" class="btn primary">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Persönliche Angaben -->
+  <div id="profile-modal" class="modal" role="dialog" aria-modal="true" hidden>
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2>Personal information</h2>
+        <button id="profile-close" class="icon-btn" aria-label="Close">×</button>
+      </div>
+
+      <div class="modal-body">
+        <p><strong>User:</strong> <span id="profile-username">Not logged in</span></p>
+
+        <hr>
+
+        <h3>Your trajectories</h3>
+        <ul id="profile-trajectories" class="trajectory-list"></ul>
+
+        <hr>
+
+        <p>
+          These personal identifiers help associate trajectories and danger spots
+          with an anonymous user profile.  
+          No personal location history is visible to other users.
+        </p>
+
+        <p>If you wish to delete your account, please contact us:</p>
+        <p>📧 <a href="mailto:luma@ethz.ch">luma@ethz.ch</a></p>
+      </div>
+
+
+      <div class="modal-actions">
+        <button id="profile-close-bottom" class="btn primary">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Trajectory Detail -->
+  <div id="trajectory-detail-modal" class="modal" role="dialog" aria-modal="true" hidden>
+    <div class="modal-card">
+
+      <div class="modal-header">
+        <button id="traj-detail-back" class="btn secondary">◀ Back</button>
+        <h2>Trajectory Details</h2>
+      </div>
+
+      <div class="modal-body">
+        <p><strong>Duration:</strong> <span id="traj-duration"></span></p>
+        <p><strong>Distance:</strong> <span id="traj-distance"></span></p>
+        <p><strong>Average Speed:</strong> <span id="traj-speed"></span></p>
+
+        <hr>
+
+        <h3>Recorded points</h3>
+        <ul id="traj-points-list"></ul>
+      </div>
+
+    </div>
+  </div>
+
+
+
+  <!-- JAVASCRIPT (alle Skripte am Ende für bessere Performance) -->
   <script
     src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
     integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
     crossorigin=""
   ></script>
 
-  <!-- Modal: Start-Info ------------------------------------------------------ -->
-  <div id="intro-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="intro-title">
-    <div class="modal-card">
-      <div class="modal-header">
-        <h2 id="intro-title">Willkommen bei LumaTrace</h2>
-      </div>
-
-      <div class="modal-body">
-        <p><strong>Kurzanleitung:</strong></p>
-        <ul>
-          <li>Drücke "Trajektorie aufzeichnen", um deine Bewegung zu starten.</li>
-          <li>Wenn du eine <em>Gefahrenstelle im Verkehr</em> bemerkst, klicke auf "Gefahrenstelle speichern".</li>
-          <li>Bewerte die Stelle von 0-4 und gib eine kurze Beschreibung an.</li>
-          <li>Falls du an eine frühere Unfallstelle kommst, erscheint automatisch ein Pop-up-Fenster, in dem du den Standort ebenfalls bewerten sollst.</li>
-        </ul>
-        <div class="perimeter-info">
-          <p><strong>Untersuchungsgebiet:</strong></p>
-          <p>
-            <a href="https://map.geo.admin.ch/#/map?lang=de&center=2683267.83,1247945.82&z=9.245&topic=ech&layers=ch.swisstopo.zeitreihen@year=1864,f;ch.bfs.gebaeude_wohnungs_register,f;ch.bav.haltestellen-oev,f;ch.swisstopo.swisstlm3d-wanderwege,f;ch.vbs.schiessanzeigen,f;ch.astra.wanderland-sperrungen_umleitungen,f;KML%7Chttps://public.geo.admin.ch/api/kml/files/Q8VT2glYRCmPAb03Qp9XbQ&bgLayer=ch.swisstopo.pixelkarte-farbe&featureInfo=tooltip" target="_blank" class="btn secondary">
-              GeoAdmin-Karte anzeigen
-            </a>
-          </p>
-          <small> Hinweis: Nur Daten innerhalb dieses definierten Perimeters sind für die Auswertung relevant.</small>
-        </div>
-      </div>
-
-      <div class="modal-actions">
-        <button id="intro-close" class="btn primary">Verstanden</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal: Heatmap anzeigen ------------------------------------------------ -->
-  <div id="heatmap-modal" class="modal" role="dialog" aria-modal="true" hidden>
-    <div class="modal-card">
-      <div class="modal-header">
-        <h2>Heatmap anzeigen?</h2>
-      </div>
-
-      <div class="modal-body">
-        <p>Möchtest du die Heatmap aller gemeldeten Gefahrenstellen sehen?</p>
-      </div>
-
-      <div class="modal-actions">
-        <button id="heatmap-no" class="btn secondary">Nein</button>
-        <button id="heatmap-yes" class="btn primary">Ja</button>
-      </div>
-    </div>
-  </div>
-
-
-  <!-- App Logic -->
-  <!-- Heatmap Plugin (muss direkt unter Leaflet stehen!) -->
   <script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
-
-  <!-- Turf JS -->
   <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
-
-  <!-- Deine App -->
   <script src="app.js"></script>
 
 </body>
 </html>
-
-
-
-
