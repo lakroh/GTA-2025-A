@@ -1,4 +1,7 @@
 // Minimalistische Single-Screen App mit Leaflet + Geolocation + Modal
+let CURRENT_USER_ID = null;
+const authToggleBtn = document.getElementById("auth-toggle-btn");
+const loggedInAsEl = document.getElementById("logged-in-as");
 (() => {
   const INITIAL_CENTER = [47.3769, 8.5417];
   const INITIAL_ZOOM = 13;
@@ -7,6 +10,7 @@
   const mapEl = document.getElementById('map');
   const statusEl = document.getElementById('status');
   const toggleBtn = document.getElementById('toggle-track');
+  toggleBtn.classList.add('start-active');
   const hazardBtn = document.getElementById('save-hazard');
 
   // Modal elements
@@ -23,8 +27,6 @@
   const heatmapNo = document.getElementById("heatmap-no");
 
   const heatmapToggleBtn = document.getElementById("toggle-heatmap");
-
-
 
   // Map & tracking state
   let map, tileLayer;
@@ -47,6 +49,13 @@
 
   let perimeterPolygon = null;
 
+  // Lokale Speicherung
+  let localTrajectory = null;
+  let localTrajectoryPoints = [];
+  let localPOIs = [];
+
+
+
 
   /* Utilities -------------------------------------------------------------- */
   function updateStatus(message) {
@@ -60,12 +69,42 @@
   function setTrackingUI(active) {
     isTracking = active;
     toggleBtn.setAttribute('aria-pressed', String(active));
-    toggleBtn.textContent = active ? 'Trajektorie beenden' : 'Trajektorie aufzeichnen';
+
+    // Text umschalten
+    toggleBtn.textContent = active ? 'Stop trajectory' : 'Start trajectory';
+
+    // Klassen für Farben wechseln
+    if (active) {
+        // STOP = Rot
+        toggleBtn.classList.remove('start-active');
+        toggleBtn.classList.add('stop-active');
+    } else {
+        // START = Grün
+        toggleBtn.classList.remove('stop-active');
+        toggleBtn.classList.add('start-active');
+    }
   }
+
 
   function clamp(val, min, max) {
     return Math.max(min, Math.min(max, val));
   }
+
+  // ➤ Hilfsfunktion: Distanz zwischen zwei GPS-Punkten (Haversine)
+  function distanceInMeters(lat1, lon1, lat2, lon2) {
+    const R = 6371000; // Erdradius in Metern
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+
+    const a =
+      Math.sin(dLat / 2) ** 2 +
+      Math.cos(lat1 * Math.PI / 180) *
+      Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLon / 2) ** 2;
+
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  }
+
 
   /* Leaflet Init ----------------------------------------------------------- */
   function initMap() {
@@ -105,6 +144,32 @@
     window.addEventListener('orientationchange', () => setTimeout(() => map.invalidateSize(), 150));
   }
 
+  // --- PERIMETER LADEN UND DARSTELLEN ---
+  // GeoJSON-Datei vom Server holen (muss im gleichen Ordner liegen wie index.html)
+  fetch("project_area.geojson")
+    .then((r) => r.json())
+    .then((data) => {
+      // Stildefinition
+      const perimeterStyle = {
+        color: "#0033ff",
+        weight: 3,
+        fillColor: "#0033ff",
+        fillOpacity: 0,   // leicht sichtbar, nicht störend
+        interactive: false   // nicht anklickbar
+      };
+
+      // GeoJSON-Layer
+      const perimeterLayer = L.geoJSON(data, { style: perimeterStyle });
+
+      // zur Karte hinzufügen
+      perimeterLayer.addTo(map);
+
+      // Karte auf Perimeter zoomen
+      map.fitBounds(perimeterLayer.getBounds());
+    })
+    .catch((err) => console.error("Perimeter konnte nicht geladen werden:", err));
+
+
   /* Fetch new trajectory ID from DB --------------------------------------- */
   async function fetchNewTrajectoryId() {
     const postData =
@@ -128,7 +193,7 @@
     const xml = await response.text();
     const match = xml.match(/fid="trajectory\.(\d+)"/);
     if (!match) {
-      alert("❌ Konnte keine trajectory_id erzeugen");
+      alert("❌ Could not generate trajectory_id");
       return null;
     }
     return Number(match[1]);
@@ -198,28 +263,28 @@
 
     async function loadBuffers() {
       try {
-        //const response = await fetch('http://localhost:8989/get_buffers');
-        const response = await fetch('https://gta25aprd.ethz.ch/app/get_buffers');
+        const response = await fetch('http://localhost:8989/get_buffers');
+        //const response = await fetch('https://gta25aprd.ethz.ch/app/get_buffers');
         const geojson = await response.json();
 
         // Buffer auf der Karte anzeigen
         L.geoJSON(geojson, {
           color: '#e03131',
           weight: 1, // hier 0 einsetzen damit Buffer nicht sichtbar sind auf Karte
-          fillOpacity: 0.1 // hier 0 einsetzen damit Buffer nicht sichtbar sind auf Karte
+          fillOpacity: 0.3 // hier 0 einsetzen damit Buffer nicht sichtbar sind auf Karte
         }).addTo(map);
 
         hazardBuffers = geojson.features;
-        console.log(`✅ ${hazardBuffers.length} Buffer geladen`);
+        console.log(`✅ ${hazardBuffers.length} Buffer loaded`);
       } catch (err) {
-        console.error('❌ Fehler beim Laden der Buffer:', err);
+        console.error('❌ Error loading buffers:', err);
       }
     }
 
     async function loadHeatmap() {
       try {
-        //const response = await fetch("http://localhost:8989/heatmap");
-        const response = await fetch("https://gta25aprd.ethz.ch/app/heatmap");
+        const response = await fetch("http://localhost:8989/heatmap");
+        //const response = await fetch("https://gta25aprd.ethz.ch/app/heatmap");
         const data = await response.json();
 
         // 🔹 FILTER: Punkte mit weight = 0 werden entfernt
@@ -242,7 +307,7 @@
             }
           }
 
-          console.log("Heatmap gefiltert:", filtered.length, "von", heatData.length);
+          console.log("Heat map filtered:", filtered.length, "from", heatData.length);
 
 
           heatData.length = 0;
@@ -270,10 +335,10 @@
           heatLayer = L.heatLayer(heatData, heatmapOptions);
         }
 
-        console.log("🔥 Heatmap geladen:", heatData.length, "Punkte");
+        console.log("🔥 Heat map loaded:", heatData.length, "points");
 
       } catch (err) {
-        console.error("❌ Fehler beim Laden der Heatmap:", err);
+        console.error("❌ Error loading heat map:", err);
       }
     }
 
@@ -319,22 +384,41 @@
       const bufferHint = document.getElementById('buffer-hint');
       if (bufferHint) bufferHint.hidden = false;
       descInput.value = '';
-      descInput.placeholder = "z.B. Gefährliche Stelle mit Tram";
+      descInput.placeholder = "e.g. danger spot with tram";
     }
 
 
     function openModal() {
+      if (!isTracking) {
+        alert("You can only save danger spots while a trajectory is running.");
+        return;
+  }
       lastFocusedBeforeModal = document.activeElement;
       formError.textContent = '';
-      descInput.value = '';
-      levelInput.value = '2';
+
+      // ✅ Dropdown zurücksetzen
+      descInput.value = "";
+
+      // ✅ Slider zurücksetzen
+      levelInput.value = "2";
+
+      // ✅ Slider-Anzeige aktualisieren
+      const levelOutput = document.getElementById("level-output");
+      if (levelOutput) {
+        levelOutput.textContent = levelInput.value;
+      }
+
+      // Modal öffnen
       modal.hidden = false;
+
+      // Fokus auf Dropdown setzen
       descInput.focus();
 
-      // Wenn Modal manuell geöffnet wurde (nicht durch Buffer)
+      // Hinweis (nur bei automatischen Popups) verstecken
       const bufferHint = document.getElementById('buffer-hint');
       if (bufferHint) bufferHint.hidden = true;
     }
+
 
 
   /* Geolocation ------------------------------------------------------------ */
@@ -343,11 +427,11 @@
     if (heatLayer && heatmapVisible) {
       map.removeLayer(heatLayer);
       heatmapVisible = false;
-      heatmapToggleBtn.textContent = "Heatmap anzeigen";
+      heatmapToggleBtn.textContent = "Show heat map";
     }
 
-// Heatmap-Button deaktivieren
-heatmapToggleBtn.classList.add("disabled");
+    // Heatmap-Button deaktivieren
+    heatmapToggleBtn.classList.add("disabled");
 
 
     // Wichtig: Buffer-Zustand zurücksetzen, sonst kommt kein Popup!
@@ -379,28 +463,44 @@ heatmapToggleBtn.classList.add("disabled");
     }).addTo(map);
 
     if (!('geolocation' in navigator)) {
-      updateStatus('Geolokalisierung wird nicht unterstützt.');
+      updateStatus('Geolocation is not supported.');
       return;
     }
 
-    currentTrajectoryId = await fetchNewTrajectoryId();
+    // Lokale Trajektorie erstellen
+    localTrajectory = {
+      id: Date.now(),
+      started_at: new Date().toISOString(),
+      ended_at: null
+    };
+
+    // Lokale Speicher-Arrays zurücksetzen
+    localTrajectoryPoints = [];
+    localPOIs = [];
     trajectoryCoords = [];
-    console.log("✅ Neue Trajektorie-ID:", currentTrajectoryId);
+
+    console.log("🟦 New local trajectory created", localTrajectory);
 
     setTrackingUI(true);
-    updateStatus('Tracking gestartet …');
-    hazardBtn.disabled = false;   // Button aktivieren
-    hazardBtn.classList.remove("disabled"); 
+    updateStatus('Tracking started …');
+    hazardBtn.disabled = false;
+    hazardBtn.classList.remove("disabled");
+    hazardBtn.removeAttribute("disabled");
 
-
-    // 🔹 ERSTEN Punkt sofort speichern (started_at)
-    navigator.geolocation.getCurrentPosition((pos) => {
+    // Ersten GPS-Punkt lokal speichern
+    navigator.geolocation.getCurrentPosition(pos => {
       const { latitude, longitude } = pos.coords;
-      const ts = new Date().toISOString();
-      const id = Date.now();
-      insertTrajectoryPoint(latitude, longitude, id, ts, currentTrajectoryId);
-      console.log("📍 Started_at Punkt gespeichert:", latitude, longitude);
+
+      localTrajectoryPoints.push({
+        lat: latitude,
+        lng: longitude,
+        ts: new Date().toISOString(),
+        id: Date.now()
+      });
+
+      console.log("📍 First point stored locally", latitude, longitude);
     });
+
 
     watchId = navigator.geolocation.watchPosition(onPosition, onGeoError, {
       enableHighAccuracy: true,
@@ -411,19 +511,21 @@ heatmapToggleBtn.classList.add("disabled");
     // 🔹 Alle 8 Sekunden Trajectory_Point aufnehmen
     saveTimer = setInterval(() => {
       if (lastPosition) {
-        insertTrajectoryPoint(
-          lastPosition.lat,
-          lastPosition.lng,
-          Date.now(),
-          new Date().toISOString(),
-          currentTrajectoryId
-        );
-        console.log("📍 Trackingpunkt gespeichert:", lastPosition);
+        localTrajectoryPoints.push({
+          lat: lastPosition.lat,
+          lng: lastPosition.lng,
+          ts: new Date().toISOString(),
+          id: Date.now()
+        });
+
+        console.log("📍 Tracking point saved (local):", lastPosition);
       }
     }, 8000);
+
   }
 
   function stopTracking() {
+    isTracking = false;
     if (watchId !== null) {
       navigator.geolocation.clearWatch(watchId);
       watchId = null;
@@ -434,34 +536,22 @@ heatmapToggleBtn.classList.add("disabled");
       saveTimer = null;
     }
 
-    // 🔹 LETZTEN Punkt speichern (ended_at)
-    if (lastPosition && currentTrajectoryId) {
-      const ts = new Date().toISOString();
-      const id = Date.now() + 1;
-      insertTrajectoryPoint(lastPosition.lat, lastPosition.lng, id, ts, currentTrajectoryId);
-      console.log("📍 Ended_at Punkt gespeichert:", lastPosition);
-    }
-
-    if (currentTrajectoryId !== null) {
-      closeTrajectory(currentTrajectoryId);
-      currentTrajectoryId = null;
-    }
-
+    // Nur UI/Status, keine DB
     setTrackingUI(false);
-    updateStatus('Tracking beendet. Die aufgezeichnete Trajektorie bleibt sichtbar.');
-    hazardBtn.disabled = true;   // Button deaktivieren
+    updateStatus('Tracking ended. You can now save or delete the trajectory.');
+    hazardBtn.disabled = true;
     hazardBtn.classList.add("disabled");
+    hazardBtn.setAttribute("disabled", "true");
 
-
-
-    // Heatmap-Auswahl anzeigen
+    // Heatmap Auswahl
     if (heatmapModal) heatmapModal.hidden = false;
-
-    // Heatmap-Button wieder aktivieren
     heatmapToggleBtn.classList.remove("disabled");
-
+    heatmapToggleBtn.removeAttribute("disabled");
+    heatmapToggleBtn.classList.remove("disabled");
+    heatmapVisible = false;
 
   }
+
 
   
 
@@ -480,26 +570,38 @@ heatmapToggleBtn.classList.add("disabled");
       map.panTo(latlng, { animate: true, duration: 0.5 });
     }
 
-    updateStatus(`Letzte Position: ${fmtLatLng(latlng)} (±${Math.round(accuracy)} m)`);
+    updateStatus(`Last position: ${fmtLatLng(latlng)} (±${Math.round(accuracy)} m)`);
+
+    /* ----------------------------------------------------
+      🔥 BUFFER-LOGIK: Popup öffnen & automatisch schließen
+      ---------------------------------------------------- */
 
     const bufferId = getCurrentBufferId(latitude, longitude);
 
-    // Wenn Nutzer einen neuen Cluster betritt → Popup
-    if (bufferId !== null && bufferId !== currentBufferId) {
-      currentBufferId = bufferId;
-      showBufferPopup();
-    }
+    // 1) INSIDE → OUTSIDE  (Popup schließen)
+    if (bufferId === null && currentBufferId !== null) {
+      console.log("➡️ Left buffer, closing popup…");
 
-    // Wenn Nutzer alle Cluster verlässt
-    if (bufferId === null) {
+      // Modal schließen
+      modal.hidden = true;
+      formError.textContent = "";
+      hazardForm.reset();
+
       currentBufferId = null;
     }
 
+    // 2) OUTSIDE → INSIDE  (Popup öffnen)
+    if (bufferId !== null && bufferId !== currentBufferId) {
+      console.log("⬅️ Entered new buffer:", bufferId);
+      currentBufferId = bufferId;
+      showBufferPopup();     // dein bestehender Pop-up-Öffner
+    }
   }
 
 
+
   function onGeoError(err) {
-    updateStatus('GPS Fehler');
+    updateStatus('GPS error');
     setTrackingUI(false);
   }
 
@@ -514,17 +616,22 @@ heatmapToggleBtn.classList.add("disabled");
     e.preventDefault();
     formError.textContent = '';
 
+    if (!isTracking) {
+      formError.textContent = "You can only save danger spots while a trajectory is running.";
+      return;
+    }
+
     const desc = descInput.value.trim();
     const levelRaw = Number(levelInput.value);
 
     if (!desc) {
-      formError.textContent = 'Bitte eine Beschreibung eingeben.';
+      formError.textContent = 'Please select a danger type.';
       descInput.focus();
       return;
     }
 
     if (isNaN(levelRaw) || levelRaw < 0 || levelRaw > 4) {
-      formError.textContent = 'Bitte eine Zahl zwischen 0 und 4 eingeben.';
+      formError.textContent = 'Please enter a number between 0 and 4.';
       levelInput.focus();
       return;
     }
@@ -534,17 +641,37 @@ heatmapToggleBtn.classList.add("disabled");
     const ts = new Date().toISOString();
     const id = Date.now();
 
-    insertPoint(coordinate.lat, coordinate.lng, id, ts, currentTrajectoryId ?? 0, desc, level);
+    localPOIs.push({
+      lat: coordinate.lat,
+      lng: coordinate.lng,
+      id,
+      ts,
+      type: desc,
+      severity: level
+    });
 
-    updateStatus(`Gefahrenstelle gespeichert (Stufe ${level})`);
+
+    updateStatus(`Danger spot saved (Level ${level})`);
     closeModal();
   }
 
   /* Button Handlers -------------------------------------------------------- */
   toggleBtn.addEventListener('click', () => {
-    if (isTracking) stopTracking();
-    else startTracking();
+
+    // ⚠️ Nicht eingeloggt → Tracking blockieren
+    if (!CURRENT_USER_ID) {
+      document.getElementById("login-required-modal").hidden = false;
+      return;
+    }
+
+    if (!isTracking) {
+      startTracking();
+    } else {
+      document.getElementById('trajectory-stop-modal').hidden = false;
+    }
   });
+
+
   hazardBtn.addEventListener('click', openModal);
   modalCloseBtn.addEventListener('click', closeModal);
   cancelModalBtn.addEventListener('click', closeModal);
@@ -557,11 +684,11 @@ heatmapToggleBtn.classList.add("disabled");
       await loadHeatmap();
       heatLayer.addTo(map);
       heatmapVisible = true;
-      heatmapToggleBtn.textContent = "Heatmap ausblenden";
+      heatmapToggleBtn.textContent = "Hide heat map";
     } else {
       map.removeLayer(heatLayer);
       heatmapVisible = false;
-      heatmapToggleBtn.textContent = "Heatmap anzeigen";
+      heatmapToggleBtn.textContent = "Show heat map";
     }
   });
 
@@ -573,7 +700,7 @@ heatmapToggleBtn.classList.add("disabled");
     if (!heatmapVisible) {
       heatLayer.addTo(map);
       heatmapVisible = true;
-      heatmapToggleBtn.textContent = "Heatmap ausblenden";
+      heatmapToggleBtn.textContent = "Hide heat map";
     }
   });
 
@@ -581,11 +708,449 @@ heatmapToggleBtn.classList.add("disabled");
     heatmapModal.hidden = true;
   });
 
+  // Personal info button inside heatmap modal
+  const heatmapProfile = document.getElementById("heatmap-profile");
+
+  if (heatmapProfile) {
+    heatmapProfile.addEventListener("click", () => {
+      // Heatmap-Modus schließen
+      heatmapModal.hidden = true;
+
+      // Profil-Infos aktualisieren
+      document.getElementById("profile-username").textContent =
+        CURRENT_USERNAME || "Not logged in";
+
+      // Falls du die user-id entfernt hast, wird sie ignoriert
+      const useridEl = document.getElementById("profile-userid");
+      if (useridEl) useridEl.textContent = CURRENT_USER_ID || "–";
+
+      // Profilmodal öffnen
+      document.getElementById("profile-modal").hidden = false;
+    });
+  }
+
+
+  document.getElementById("auth-close").addEventListener("click", () => {
+    document.getElementById("auth-modal").hidden = true;
+
+    // Immer zurück auf LOGIN-Ansicht
+    document.getElementById("login-view").hidden = false;
+    document.getElementById("register-view").hidden = true;
+
+    // Felder leeren beim Schließen
+    document.getElementById("login-username").value = "";
+    document.getElementById("login-password").value = "";
+    document.getElementById("register-username").value = "";
+    document.getElementById("register-password").value = "";
+    document.getElementById("auth-error").textContent = "";
+    document.getElementById("register-error").textContent = "";
+  });
+
+  /* ----------------------------------------------
+   Trajectory STOP Modal (Save / Delete / Continue)
+   ---------------------------------------------- */
+
+  const trajStopModal = document.getElementById('trajectory-stop-modal');
+  const trajContinue = document.getElementById('traj-continue');
+  const trajDelete = document.getElementById('traj-delete');
+  const trajSave = document.getElementById('traj-save');
+
+  // ➤ Continue (Modal schließen, Tracking läuft weiter)
+  trajContinue.addEventListener('click', () => {
+    trajStopModal.hidden = true;
+  });
+
+  // ➤ Delete (Tracking stoppen + Trajektorie verwerfen)
+  // ➤ Delete (Tracking stoppen + Trajektorie verwerfen)
+  trajDelete.addEventListener('click', () => {
+    trajStopModal.hidden = true;
+
+    // Tracking stoppen OHNE speichern
+    if (watchId !== null) navigator.geolocation.clearWatch(watchId);
+    if (saveTimer) clearInterval(saveTimer);
+
+    // ❌ Lokale Daten komplett löschen
+    localTrajectory = null;
+    localTrajectoryPoints = [];
+    localPOIs = [];
+
+    // Linienzug entfernen
+    trajectoryCoords = [];
+
+    setTrackingUI(false);
+    isTracking = false;
+
+    hazardBtn.disabled = true;
+    hazardBtn.classList.add("disabled");
+    hazardBtn.setAttribute("disabled", "true");
+
+    heatmapToggleBtn.removeAttribute("disabled");
+    heatmapToggleBtn.classList.remove("disabled");
+    heatmapVisible = false;
+    updateStatus("Trajectory deleted (not saved).");
+
+    heatmapModal.hidden = true;
+  });
+
+
+  // ➤ Save (Tracking stoppen & DB speichern)
+  trajSave.addEventListener('click', async () => {
+    trajStopModal.hidden = true;
+
+
+    // Tracking stoppen
+    if (watchId !== null) navigator.geolocation.clearWatch(watchId);
+    if (saveTimer) clearInterval(saveTimer);
+
+    // Endzeit setzen
+    localTrajectory.ended_at = new Date().toISOString();
+
+    // 🔹 Finalen Endpunkt als trajectory_point hinzufügen
+    if (lastPosition) {
+      localTrajectoryPoints.push({
+        lat: lastPosition.lat,
+        lng: lastPosition.lng,
+        ts: localTrajectory.ended_at,   // ended_at Zeitstempel!
+        id: Date.now()
+      });
+    }
+
+
+
+
+    updateStatus("Saving trajectory…");
+
+    // 1️⃣ Trajektorie speichern
+    const newId = await saveTrajectoryToDB(localTrajectory);
+    if (!newId) {
+      alert("Error: Could not save trajectory.");
+      return;
+    }
+
+    // 2️⃣ Alle Punkte speichern
+    for (const p of localTrajectoryPoints) {
+      await saveTrajectoryPointToDB(p, newId);
+    }
+
+    // 3️⃣ POIs speichern
+    for (const poi of localPOIs) {
+      await savePOIToDB(poi, newId);
+    }
+
+    // 4️⃣ Geometrie (LineString) speichern
+    await saveTrajectoryGeometryToDB(localTrajectoryPoints, newId);
+
+    updateStatus("Trajectory saved to DB.");
+
+    // Lokale Arrays löschen
+    localTrajectory = null;
+    localTrajectoryPoints = [];
+    localPOIs = [];
+
+    setTrackingUI(false);
+    isTracking = false;
+
+    hazardBtn.disabled = true;
+    hazardBtn.classList.add("disabled");
+    hazardBtn.setAttribute("disabled", "true");
+
+    heatmapToggleBtn.removeAttribute("disabled");
+    heatmapToggleBtn.classList.remove("disabled");
+    heatmapVisible = false;
+
+    heatmapModal.hidden = false;
+  });
+
+    // Logout confirmation OK button
+    const logoutModal = document.getElementById("logout-modal");
+    const logoutOk = document.getElementById("logout-ok");
+
+    if (logoutOk) {
+      logoutOk.addEventListener("click", () => {
+        logoutModal.hidden = true;
+      });
+    }
+
+    // Login-required modal OK button
+    const loginRequiredModal = document.getElementById("login-required-modal");
+    const loginRequiredOk = document.getElementById("login-required-ok");
+
+    if (loginRequiredOk) {
+      loginRequiredOk.addEventListener("click", () => {
+        loginRequiredModal.hidden = true;
+      });
+    }
+
+
+
+  
+
+  /* -------------------- LOGIN / REGISTER LOGIK ---------------------- */
+
+  async function loginUser(username, password) {
+    const res = await fetch("http://localhost:8989/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password })
+    });
+
+    const data = await res.json();
+    if (!data.success) return null;
+    return data.user_id;
+  }
+
+  async function registerUser(username, password) {
+    const res = await fetch("http://localhost:8989/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password })
+    });
+
+    const data = await res.json();
+    if (!data.success) return null;
+    return data.user_id;
+  }
+
+  function updateAuthUI() {
+    const profileBtn = document.getElementById("profile-btn");
+
+    if (CURRENT_USER_ID) {
+      authToggleBtn.textContent = "Logout";
+      loggedInAsEl.textContent = `Logged in as ${CURRENT_USERNAME}`;
+      loggedInAsEl.hidden = false;
+
+      // ➤ Profil-Button einblenden
+      if (profileBtn) profileBtn.style.display = "block";
+
+    } else {
+      authToggleBtn.textContent = "Login";
+      loggedInAsEl.hidden = true;
+
+      // ➤ Profil-Button ausblenden
+      if (profileBtn) profileBtn.style.display = "none";
+    }
+  }
+
+
+  authToggleBtn.addEventListener("click", () => {
+    if (CURRENT_USER_ID) {
+    CURRENT_USER_ID = null;
+    CURRENT_USERNAME = null;
+    updateAuthUI();
+
+    localStorage.removeItem("auth_user_id");
+    localStorage.removeItem("auth_username");
+    localStorage.removeItem("auth_expires");
+
+
+    // Eigenes Logout-Modal anzeigen
+    document.getElementById("logout-modal").hidden = false;
+    return;
+  }
+
+
+    // 🎯 Felder leeren BEVOR Modal geöffnet wird
+    document.getElementById("login-username").value = "";
+    document.getElementById("login-password").value = "";
+    document.getElementById("register-username").value = "";
+    document.getElementById("register-password").value = "";
+    document.getElementById("auth-error").textContent = "";
+    document.getElementById("register-error").textContent = "";
+
+    // sonst Login öffnen
+    document.getElementById("auth-modal").hidden = false;
+  });
+
+
+
+  // Buttons
+  document.getElementById("login-btn").addEventListener("click", async () => {
+    const username = document.getElementById("login-username").value.trim();
+    const password = document.getElementById("login-password").value.trim();
+    const errorEl = document.getElementById("auth-error");
+
+    if (!username || !password) {
+      errorEl.textContent = "Please fill in all fields.";
+      return;
+    }
+
+    const userId = await loginUser(username, password);
+    if (!userId) {
+      errorEl.textContent = "Invalid username or password.";
+      return;
+    }
+
+    CURRENT_USER_ID = userId;
+    CURRENT_USERNAME = username;
+
+    document.getElementById("auth-modal").hidden = true;
+
+    updateAuthUI();
+    console.log("Logged in as user", CURRENT_USER_ID);
+
+    // Login-Daten speichern (gültig für 1h)
+    const expiresAt = Date.now() + 1 * 60 * 60 * 1000;
+
+    localStorage.setItem("auth_user_id", CURRENT_USER_ID);
+    localStorage.setItem("auth_username", CURRENT_USERNAME);
+    localStorage.setItem("auth_expires", expiresAt);
+
+  });
+
+
+  document.getElementById("register-btn").addEventListener("click", async () => {
+    const username = document.getElementById("register-username").value.trim();
+    const password = document.getElementById("register-password").value.trim();
+    const errorEl = document.getElementById("register-error");
+
+    if (!username || !password) {
+      errorEl.textContent = "Please fill in all fields.";
+      return;
+    }
+
+    const userId = await registerUser(username, password);
+    if (!userId) {
+      errorEl.textContent = "Username already exists.";
+      return;
+    }
+
+    CURRENT_USER_ID = userId;
+    CURRENT_USERNAME = username;
+
+    document.getElementById("auth-modal").hidden = true;
+
+    updateAuthUI();
+    console.log("Registered + logged in as user", CURRENT_USER_ID);
+
+    // Login-Daten speichern (gültig für 1h)
+    const expiresAt = Date.now() + 1 * 60 * 60 * 1000;
+
+    localStorage.setItem("auth_user_id", CURRENT_USER_ID);
+    localStorage.setItem("auth_username", CURRENT_USERNAME);
+    localStorage.setItem("auth_expires", expiresAt);
+
+  });
+
+
+  // Login ↔ Register Toggle
+  document.getElementById("show-register").addEventListener("click", () => {
+    document.getElementById("login-view").hidden = true;
+    document.getElementById("register-view").hidden = false;
+  });
+
+  document.getElementById("show-login").addEventListener("click", () => {
+    document.getElementById("register-view").hidden = true;
+    document.getElementById("login-view").hidden = false;
+  });
+
+  // 👉 NEUE FUNKTION HIER EINSETZEN
+  async function loadUserTrajectories() {
+    const list = document.getElementById("profile-trajectories");
+    list.innerHTML = "Loading...";
+
+    const res = await fetch(`http://localhost:8989/user_trajectories/${CURRENT_USER_ID}`);
+    const data = await res.json();
+
+    if (!data.length) {
+      list.innerHTML = "<li>No trajectories yet.</li>";
+      return;
+    }
+
+    list.innerHTML = "";
+    data.forEach(t => {
+      const li = document.createElement("li");
+      li.className = "traj-entry";
+
+      li.textContent =
+        `${new Date(t.started_at).toLocaleString()} → ${
+          t.ended_at ? new Date(t.ended_at).toLocaleString() : "running"
+        }`;
+
+      li.addEventListener("click", () => openTrajectoryDetails(t.id));
+      list.appendChild(li);
+    });
+  }
+
+  // ➤ Trajectory Detail öffnen + Metadaten berechnen
+  async function openTrajectoryDetails(trajId) {
+    const modal = document.getElementById("trajectory-detail-modal");
+    const durationEl = document.getElementById("traj-duration");
+    const distanceEl = document.getElementById("traj-distance");
+    const speedEl = document.getElementById("traj-speed");
+    const ptsList = document.getElementById("traj-points-list");
+
+    // Details vom Backend holen
+    const res = await fetch(`http://localhost:8989/trajectory_details/${trajId}`);
+    const data = await res.json();
+
+    // Dauer
+    const start = new Date(data.started_at);
+    const end = new Date(data.ended_at);
+    const durationMs = end - start;
+    const durationMin = (durationMs / 60000).toFixed(1);
+    durationEl.textContent = `${durationMin} min`;
+
+    // Distanz berechnen
+    let dist = 0;
+    for (let i = 1; i < data.points.length; i++) {
+      const p1 = data.points[i - 1];
+      const p2 = data.points[i];
+      dist += distanceInMeters(p1.lat, p1.lng, p2.lat, p2.lng);
+    }
+    distanceEl.textContent = `${(dist / 1000).toFixed(2)} km`;
+
+    // Geschwindigkeit
+    const kmh = (dist / 1000) / (durationMs / 3600000);
+    speedEl.textContent = `${kmh.toFixed(2)} km/h`;
+
+    // Punkte anzeigen
+    ptsList.innerHTML = "";
+    data.points.forEach(p => {
+      const li = document.createElement("li");
+      li.textContent = `${new Date(p.ts).toLocaleTimeString()} — ${p.lat}, ${p.lng}`;
+      ptsList.appendChild(li);
+    });
+
+    // Modals verwalten
+    document.getElementById("profile-modal").hidden = true;
+    modal.hidden = false;
+  }
+
+  // ➤ Zurück-Button im Trajektorie-Detail-Fenster
+  document.getElementById("traj-detail-back").addEventListener("click", () => {
+    document.getElementById("trajectory-detail-modal").hidden = true;
+    document.getElementById("profile-modal").hidden = false;
+  });
+
+
+
 
   /* Boot ------------------------------------------------------------------- */
   document.addEventListener('DOMContentLoaded', () => {
+
+    // Persistente Login-Prüfung
+    const savedId = localStorage.getItem("auth_user_id");
+    const savedUser = localStorage.getItem("auth_username");
+    const expires = localStorage.getItem("auth_expires");
+
+    if (savedId && savedUser && expires) {
+      if (Date.now() < Number(expires)) {
+        // Login wiederherstellen
+        CURRENT_USER_ID = Number(savedId);
+        CURRENT_USERNAME = savedUser;
+        updateAuthUI();
+        console.log("Auto-login restored:", CURRENT_USERNAME);
+      } else {
+        // Abgelaufen → Daten löschen
+        localStorage.removeItem("auth_user_id");
+        localStorage.removeItem("auth_username");
+        localStorage.removeItem("auth_expires");
+      }
+    }
+
+
     initMap();
-    updateStatus('Bereit.');
+    updateStatus('ready.');
     loadBuffers(); // 🔹 Buffer beim Start laden
     hazardBtn.disabled = true;
 
@@ -594,25 +1159,86 @@ heatmapToggleBtn.classList.add("disabled");
       .then(r => r.json())
       .then(geo => {
         perimeterPolygon = geo.features[0];     // Erstes Polygon aus project_area
-        console.log("Perimeter geladen:", perimeterPolygon);
+        console.log("Perimeter loaded:", perimeterPolygon);
       })
-      .catch(err => console.error("❌ Fehler beim Laden des Perimeters:", err));
+      .catch(err => console.error("❌ Error loading perimeter:", err));
 
 
+    const levelSlider = document.getElementById('level');
+    const levelOutput = document.getElementById('level-output');
 
-    
+    // Initialwert anzeigen
+    if (levelSlider && levelOutput) {
+      levelOutput.textContent = levelSlider.value;
 
-    // Intro-Modal anzeigen
-    const introModal = document.getElementById('intro-modal');
-    const introClose = document.getElementById('intro-close');
-    if (introModal && introClose) {
-      introModal.hidden = false;
-      introClose.addEventListener('click', () => (introModal.hidden = true));
-      document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && !introModal.hidden) introModal.hidden = true;
+      levelSlider.addEventListener('input', () => {
+        levelOutput.textContent = levelSlider.value;
       });
     }
+
+      
+    /* ================================
+      HELP / INSTRUCTION MODAL LOGIK
+      ================================ */
+
+    const helpBtn = document.getElementById('help-btn');
+    const introModal = document.getElementById('intro-modal');
+    const introClose = document.getElementById('intro-close');
+
+    if (helpBtn && introModal && introClose) {
+
+      // Öffnen über ? Button
+      helpBtn.addEventListener('click', () => {
+        introModal.hidden = false;
+
+        // 🔥 Scroll immer wieder ganz nach oben setzen
+        const body = introModal.querySelector('.modal-body');
+        if (body) body.scrollTop = 0;
+      });
+
+      
+
+      // Schließen über OK-Button
+      introClose.addEventListener('click', () => {
+        introModal.hidden = true;
+      });
+
+      // Schließen über ESC-Taste
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && !introModal.hidden) {
+          introModal.hidden = true;
+        }
+      });
+    }
+
+    /* -----------------------------------------
+      PROFILE / PERSONAL INFORMATION MODAL
+    ----------------------------------------- */
+    const profileBtn = document.getElementById("profile-btn");
+    const profileModal = document.getElementById("profile-modal");
+    const profileClose = document.getElementById("profile-close");
+    const profileCloseBottom = document.getElementById("profile-close-bottom");
+
+    if (profileBtn && profileModal) {
+      profileBtn.addEventListener("click", () => {
+        // Benutzerinformationen aktualisieren
+        document.getElementById("profile-username").textContent =
+          CURRENT_USERNAME || "Not logged in";
+        
+        // 🚀 HIER: Trajektorien laden!
+        loadUserTrajectories();
+
+        profileModal.hidden = false;
+      });
+
+      const closeProfile = () => (profileModal.hidden = true);
+
+      profileClose.addEventListener("click", closeProfile);
+      profileCloseBottom.addEventListener("click", closeProfile);
+    }
+
   });
+
 })();
 
 /* -------------------------- WFS INSERTS ---------------------------------- */
@@ -691,3 +1317,114 @@ function insertTrajectoryPoint(lat, lng, id, ts, trajectory_id) {
 }
 
 
+async function saveTrajectoryToDB(traj) {
+  const postData =
+    '<wfs:Transaction service="WFS" version="1.0.0"' +
+    ' xmlns:wfs="http://www.opengis.net/wfs"' +
+    ' xmlns:GTA25_project="https://www.gis.ethz.ch/GTA25_project">' +
+    '<wfs:Insert>' +
+    '<GTA25_project:trajectory>' +
+    '<started_at>' + traj.started_at + '</started_at>' +
+    '<ended_at>' + traj.ended_at + '</ended_at>' +
+    '<user_id>' + CURRENT_USER_ID + '</user_id>' +
+    '</GTA25_project:trajectory>' +
+    '</wfs:Insert>' +
+    '</wfs:Transaction>';
+
+  const response = await fetch(wfs, {
+    method: "POST",
+    headers: { "Content-Type": "text/xml" },
+    body: postData
+  });
+
+  const xml = await response.text();
+  const match = xml.match(/fid="trajectory\.(\d+)"/);
+
+  return match ? Number(match[1]) : null;
+}
+
+async function saveTrajectoryPointToDB(p, trajectory_id) {
+  let postData =
+    '<wfs:Transaction service="WFS" version="1.0.0"' +
+    ' xmlns:wfs="http://www.opengis.net/wfs"' +
+    ' xmlns:gml="http://www.opengis.net/gml"' +
+    ' xmlns:GTA25_project="https://www.gis.ethz.ch/GTA25_project">' +
+    '<wfs:Insert>' +
+    '<GTA25_project:trajectory_point>' +
+    '<lng>' + p.lng + '</lng>' +
+    '<lat>' + p.lat + '</lat>' +
+    '<ts>' + p.ts + '</ts>' +
+    '<trajectory_id>' + trajectory_id + '</trajectory_id>' +
+    '<user_id>' + CURRENT_USER_ID + '</user_id>' +
+    '<geom><gml:Point srsName="EPSG:4326">' +
+    '<gml:coordinates>' + p.lng + ',' + p.lat + '</gml:coordinates>' +
+    '</gml:Point></geom>' +
+    '</GTA25_project:trajectory_point>' +
+    '</wfs:Insert>' +
+    '</wfs:Transaction>';
+
+  await fetch(wfs, { method: "POST", headers: { "Content-Type": "text/xml" }, body: postData });
+}
+
+async function savePOIToDB(poi, trajectory_id) {
+  let postData =
+    '<wfs:Transaction service="WFS" version="1.0.0"' +
+    ' xmlns:wfs="http://www.opengis.net/wfs"' +
+    ' xmlns:gml="http://www.opengis.net/gml"' +
+    ' xmlns:GTA25_project="https://www.gis.ethz.ch/GTA25_project">' +
+    '<wfs:Insert>' +
+    '<GTA25_project:poi_event>' +
+    '<lng>' + poi.lng + '</lng>' +
+    '<lat>' + poi.lat + '</lat>' +
+    '<ts>' + poi.ts + '</ts>' +
+    '<trajectory_id>' + trajectory_id + '</trajectory_id>' +
+    '<type>' + poi.type + '</type>' +
+    '<severity>' + poi.severity + '</severity>' +
+    '<user_id>' + CURRENT_USER_ID + '</user_id>' +
+    '<geom><gml:Point srsName="EPSG:4326">' +
+    '<gml:coordinates>' + poi.lng + ',' + poi.lat + '</gml:coordinates>' +
+    '</gml:Point></geom>' +
+    '</GTA25_project:poi_event>' +
+    '</wfs:Insert>' +
+    '</wfs:Transaction>';
+
+  await fetch(wfs, { method: "POST", headers: { "Content-Type": "text/xml" }, body: postData });
+}
+
+async function saveTrajectoryGeometryToDB(points, trajectory_id) {
+  if (!points.length) return;
+
+  // LineString in "lng lat" Format erzeugen
+  const coordString = points
+    .map(p => `${p.lng},${p.lat}`)
+    .join(' ');
+
+  const postData =
+    '<wfs:Transaction service="WFS" version="1.0.0"' +
+    ' xmlns:wfs="http://www.opengis.net/wfs"' +
+    ' xmlns:ogc="http://www.opengis.net/ogc"' +
+    ' xmlns:gml="http://www.opengis.net/gml"' +
+    ' xmlns:GTA25_project="https://www.gis.ethz.ch/GTA25_project">' +
+      '<wfs:Update typeName="GTA25_project:trajectory">' +
+        '<wfs:Property>' +
+          '<wfs:Name>geom</wfs:Name>' +
+          '<wfs:Value>' +
+            '<gml:LineString srsName="EPSG:4326">' +
+              '<gml:coordinates decimal="." cs="," ts=" ">' +
+                coordString +
+              '</gml:coordinates>' +
+            '</gml:LineString>' +
+          '</wfs:Value>' +
+        '</wfs:Property>' +
+        '<ogc:Filter>' +
+          '<ogc:FeatureId fid="trajectory.' + trajectory_id + '"/>' +
+        '</ogc:Filter>' +
+      '</wfs:Update>' +
+    '</wfs:Transaction>';
+
+  await fetch(wfs, {
+    method: "POST",
+    headers: { "Content-Type": "text/xml" },
+    body: postData
+  });
+}
