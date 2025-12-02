@@ -32,18 +32,23 @@ body{
 }
 
 /* Header ------------------------------------------------------------------- */
-.app-header{
-  display: grid;
-  place-items: center;
-  padding: 24px 16px 16px;
+.app-header {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;      /* zentriert alles */
+  padding: 24px 16px 12px;
+  gap: 8px;
 }
 
-.app-header h1{
+.app-header h1 {
   margin: 0;
-  font-size: clamp(24px, 3.6vw, 40px);
+  font-size: clamp(26px, 4vw, 40px);
   font-weight: 700;
-  letter-spacing: -0.02em;
+  text-align: center;
 }
+
+
 
 /* Main Layout --------------------------------------------------------------- */
 .app-main{
@@ -301,4 +306,219 @@ body{
   opacity: 0.5;
   pointer-events: none;
   cursor: default;
+}
+
+/* Start/Stop Button Farben ------------------------------------------- */
+
+/* Grüner Start-Button */
+.btn.start-active {
+  background: #1fa22e !important;   /* Grün */
+  color: #ffffff !important;
+  border-color: transparent !important;
+}
+
+/* Roter Stop-Button */
+.btn.stop-active {
+  background: #d11d1d !important;   /* Rot */
+  color: #ffffff !important;
+  border-color: transparent !important;
+}
+
+/* Intro-Modal: Inhalt scrollbar machen */
+#intro-modal .modal-card {
+  max-height: 90vh;     /* Modal darf 90% der Höhe einnehmen */
+  display: flex;
+  flex-direction: column;
+}
+
+#intro-modal .modal-body {
+  overflow-y: auto;     /* Vertikales Scrollen */
+  padding-right: 8px;   /* Platz für Scrollbar */
+  max-height: 70vh;     /* Inhalt darf scrollen */
+}
+
+/* Help Button oben rechts */
+.help-btn {
+  position: fixed;
+  top: 10px;
+  right: 12px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 20px;
+  font-weight: 700;
+  cursor: pointer;
+  z-index: 99999; /* über allem */
+  box-shadow: var(--shadow-sm);
+  transition: transform 120ms ease, box-shadow 120ms ease;
+}
+
+.help-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.help-btn:active {
+  transform: translateY(0);
+  box-shadow: var(--shadow-sm);
+}
+
+.slider-container {
+  margin-top: 10px;
+}
+
+.slider-container input[type="range"] {
+  width: 100%;
+  margin: 10px 0;
+}
+
+.slider-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  color: #555;
+  margin-top: -5px;
+}
+
+.slider-value {
+  font-weight: 600;
+  margin-top: 4px;
+}
+
+.field select {
+  width: 100%;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  font-size: 1rem;
+}
+
+/* Modal: Buttons nebeneinander */
+.modal-actions {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between; /* verteilt die Buttons gleichmäßig */
+  gap: 12px;                      /* Abstand zwischen Buttons */
+}
+
+/* Buttons sollen gleich breit sein */
+.modal-actions .btn {
+  flex: 1;
+  text-align: center;
+}
+
+.user-info-bar {
+  position: absolute;
+  top: 16px;
+  right: 60px; /* Platz für Help-Button */
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  z-index: 99999;
+  pointer-events: none;
+}
+
+.logged-in-as {
+  font-size: 14px;
+  color: var(--muted);
+}
+
+/* Important: modal-card must be the reference for the X */
+#auth-modal .modal-card {
+  position: relative;   /* ← NEU */
+}
+
+/* Close button styled like a real button */
+.auth-close-btn {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+
+  width: 34px;
+  height: 34px;
+
+  background: var(--surface);       /* leicht grauer Hintergrund */
+  border: 1px solid var(--border);  /* feiner Rand */
+  border-radius: 50%;               /* macht es rund */
+
+  font-size: 20px;
+  line-height: 1;
+  color: var(--text);
+  cursor: pointer;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  box-shadow: var(--shadow-sm);     /* feiner Schatten wie bei deinen Buttons */
+  transition: 0.15s ease;
+}
+
+/* Hover-Effekt: Button wird etwas dunkler + stärkerer Schatten */
+.auth-close-btn:hover {
+  background: #e8e8eb;
+  box-shadow: var(--shadow-md);
+}
+
+/* Klick-Effekt */
+.auth-close-btn:active {
+  transform: scale(0.95);
+  box-shadow: var(--shadow-sm);
+}
+
+
+.header-right {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  position: relative; /* Sicherstellen, dass kein absolute drinsteht */
+}
+
+.auth-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Persönliche Angaben Button */
+.profile-btn {
+  position: fixed;
+  top: 52px;             /* direkt unter dem Help-Button */
+  right: 12px;
+  width: 32px;
+  height: 32px;
+  display: none; 
+
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 18px;
+  cursor: pointer;
+
+  z-index: 99999;
+  box-shadow: var(--shadow-sm);
+
+  transition: transform 120ms ease, box-shadow 120ms ease;
+}
+
+.profile-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.profile-btn:active {
+  transform: translateY(0);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Make modal body scrollable */
+.modal .modal-body {
+  max-height: 60vh;        /* Höhe begrenzen */
+  overflow-y: auto;        /* Scrollen aktivieren */
+  padding-right: 6px;      /* Verhindert abgeschnittenen Text */
 }
