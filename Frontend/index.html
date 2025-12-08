@@ -25,7 +25,7 @@
 
 <body>
   <!-- AUTH MODAL (LOGIN + REGISTER) -->
-  <div id="auth-modal" class="modal" role="dialog" aria-modal="true" hidden> <!--hier hidden damit nich jedes mal kommt-->
+  <div id="auth-modal" class="modal" role="dialog" aria-modal="true" hidden>
     <div class="modal-card">
       <button id="auth-close" class="icon-btn auth-close-btn" aria-label="Close">×</button>
 
@@ -97,27 +97,24 @@
     </div>
   </div>
 
-
+  <!-- Hauptheader -->
   <header class="app-header" role="banner">
-    <!-- Hilfe-Button oben rechts -->
+
     <button id="help-btn" class="help-btn" aria-label="Help">?</button>
 
-    <!-- Persönliche Angaben Button -->
     <button id="profile-btn" class="profile-btn" aria-label="Personal information">
       👤
     </button>
 
-    <!-- Titel -->
     <h1>LumaTrace</h1>
 
-    <!-- Login darunter zentriert -->
     <div class="auth-center">
       <span id="logged-in-as" class="logged-in-as" hidden></span>
       <button id="auth-toggle-btn" class="btn small-btn">Login</button>
     </div>
   </header>
 
-
+  <!-- Hauptbereich -->
   <main class="app-main" role="main" aria-label="Kartenansicht und Steuerung">
     <div id="map" aria-label="OpenStreetMap Karte"></div>
 
@@ -140,7 +137,7 @@
     created by group A / course GTA / ETHZ – © 2025
   </footer>
 
-  <!-- Modal: Gefahrenstelle -->
+  <!-- Modal: save danger spot -->
   <div id="hazard-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" hidden>
     <div class="modal-card">
       <div class="modal-header">
@@ -167,7 +164,6 @@
           <small class="hint">Select the type of danger</small>
         </div>
 
-
         <div class="field two-col">
           <div class="slider-container">
             <label for="level">Dangerousness level</label>
@@ -182,11 +178,9 @@
               value="2"
             />
 
-            <!-- Anzeige des aktuellen Wertes -->
             <div class="slider-value">
             </div>
 
-            <!-- Achsenbeschriftung -->
             <div class="slider-labels">
               <span>0</span>
               <span>1</span>
@@ -213,7 +207,7 @@
     </div>
   </div>
 
-  <!-- Modal: Start-Info -->
+  <!-- Modal: Instruction manual -->
   <div id="intro-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="intro-title" hidden>
     <div class="modal-card">
       <div class="modal-header">
@@ -225,7 +219,7 @@
         <ul>
           <li>Press "Start trajectory" to start your movement.</li>
           <li>If you notice a <em>danger spot in traffic</em>, click on "Save danger spot."</li>
-          <li>Rate the position from 0–4 and provide a brief description.</li>
+          <li>Rate the position from 0–4 and choose a short description.</li>
           <li>If you come to a previous accident site, a pop-up window will automatically appear asking you to rate it.</li>
         </ul>
 
@@ -240,6 +234,16 @@
 
         <p>The app is intended specifically for pedestrians.</p>
 
+        <p><strong>Results:</strong></p>
+
+        <p>
+          The heatmap shows where all users have already saved danger spots, viewed with the level of danger.
+        </p>
+
+        <p>
+          In addition, you will also learn how dangerous your life is compared to the average based on the so-called danger index.
+        </p>
+        
         <p><strong>Need help? Contact us:</strong></p>
         <p>
           If you encounter any problems or have feedback, reach out:<br>
@@ -269,7 +273,7 @@
     </div>
   </div>
 
-  <!-- Modal: Heatmap anzeigen -->
+  <!-- Modal: Show heat map -->
   <div id="heatmap-modal" class="modal" role="dialog" aria-modal="true" hidden>
     <div class="modal-card">
       <div class="modal-header">
@@ -283,7 +287,7 @@
       <div class="modal-actions">
         <button id="heatmap-profile" class="btn secondary">Personal info</button>
         <button id="heatmap-no" class="btn secondary">Close</button>
-        <button id="heatmap-yes" class="btn primary">Show heat map</button>
+        <button id="heatmap-yes" class="btn secondary">Show heat map</button>
       </div>
     </div>
   </div>
@@ -341,7 +345,7 @@
     </div>
   </div>
 
-  <!-- Modal: Persönliche Angaben -->
+  <!-- Modal: Personal informations -->
   <div id="profile-modal" class="modal" role="dialog" aria-modal="true" hidden>
     <div class="modal-card">
       <div class="modal-header">
@@ -359,12 +363,6 @@
 
         <hr>
 
-        <p>
-          These personal identifiers help associate trajectories and danger spots
-          with an anonymous user profile.  
-          No personal location history is visible to other users.
-        </p>
-
         <p>If you wish to delete your account, please contact us:</p>
         <p>📧 <a href="mailto:luma@ethz.ch">luma@ethz.ch</a></p>
       </div>
@@ -381,27 +379,53 @@
     <div class="modal-card">
 
       <div class="modal-header">
-        <button id="traj-detail-back" class="btn secondary">◀ Back</button>
         <h2>Trajectory Details</h2>
       </div>
 
       <div class="modal-body">
         <p><strong>Duration:</strong> <span id="traj-duration"></span></p>
         <p><strong>Distance:</strong> <span id="traj-distance"></span></p>
-        <p><strong>Average Speed:</strong> <span id="traj-speed"></span></p>
+        <p><strong>Speed:</strong> <span id="traj-speed"></span></p>
+        <p><strong>Danger Index:</strong> <span id="traj-danger"></span></p>
+        <p><strong>Average Danger Index (all users):</strong> 
+        <span id="traj-danger-average"></span></p>
+
+        <div id="danger-bar-container">
+            <div id="danger-bar">
+                <div id="danger-index-marker" class="danger-marker"></div>
+                <div id="danger-average-marker" class="danger-marker average"></div>
+            </div>
+            <div class="danger-bar-labels">
+                <span>0</span>
+                <span>4</span>
+            </div>
+            <div class="danger-bar-legend">
+                <span><strong>0</strong> = not dangerous</span>
+                <span><strong>4</strong> = very dangerous</span>
+            </div>
+        </div>
 
         <hr>
 
         <h3>Recorded points</h3>
         <ul id="traj-points-list"></ul>
+
+        <hr>
+        <h3>Trajectory map</h3>
+        <div id="traj-map" style="height: 300px; border-radius: 12px; margin-top: 10px;"></div>
+
+      </div>
+
+      <div class="modal-actions">
+        <button id="traj-detail-back" class="btn secondary">◀Back</button>
+        <button id="traj-detail-close" class="btn secondary">Close</button>
       </div>
 
     </div>
   </div>
 
 
-
-  <!-- JAVASCRIPT (alle Skripte am Ende für bessere Performance) -->
+  <!-- JAVASCRIPT -->
   <script
     src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
     integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
