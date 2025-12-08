@@ -1,4 +1,3 @@
-/* Root & Base -------------------------------------------------------------- */
 :root{
   --bg: #FFFFFF;
   --surface: #F5F5F7;
@@ -28,15 +27,14 @@ body{
   min-height: 100vh;
   display: grid;
   grid-template-rows: auto 1fr auto;
-  overflow: hidden; /* Single-Screen */
+  overflow: hidden; 
 }
 
-/* Header ------------------------------------------------------------------- */
 .app-header {
   position: relative;
   display: flex;
   flex-direction: column;
-  align-items: center;      /* zentriert alles */
+  align-items: center;
   padding: 24px 16px 12px;
   gap: 8px;
 }
@@ -48,12 +46,9 @@ body{
   text-align: center;
 }
 
-
-
-/* Main Layout --------------------------------------------------------------- */
 .app-main{
   display: grid;
-  grid-template-rows: 1fr auto auto; /* Karte, Controls, Status */
+  grid-template-rows: 1fr auto auto;
   gap: 12px;
   padding: 12px 16px 0;
   max-width: 1100px;
@@ -73,7 +68,6 @@ body{
   overflow: hidden;
 }
 
-/* Controls ----------------------------------------------------------------- */
 .controls{
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -120,7 +114,6 @@ body{
   box-shadow: var(--shadow-md), var(--focus);
 }
 
-/* Status ------------------------------------------------------------------- */
 .status{
   margin: 0 0 8px;
   min-height: 22px;
@@ -128,7 +121,6 @@ body{
   font-size: 14px;
 }
 
-/* Footer ------------------------------------------------------------------- */
 .app-footer{
   display: grid;
   place-items: center;
@@ -137,7 +129,6 @@ body{
   background: linear-gradient(#fff, #fff) padding-box, linear-gradient(to bottom, rgba(0,0,0,0.04), rgba(0,0,0,0)) border-box;
 }
 
-/* Leaflet Tweaks ----------------------------------------------------------- */
 .leaflet-container{ background: var(--surface); }
 .leaflet-control-attribution{
   background: rgba(255,255,255,0.9);
@@ -149,7 +140,6 @@ body{
   font-size: 12px;
 }
 
-/* Modal -------------------------------------------------------------------- */
 .modal[hidden]{ display: none; }
 .modal{
   position: fixed;
@@ -209,9 +199,11 @@ body{
   display: grid;
   gap: 8px;
 }
+
 .field label{
   font-weight: 600;
 }
+
 .field input[type="text"],
 .field input[type="number"]{
   width: 100%;
@@ -222,16 +214,19 @@ body{
   font-size: 16px;
   transition: box-shadow 120ms ease, border-color 120ms ease;
 }
+
 .field input:focus{
   outline: none;
   border-color: transparent;
   box-shadow: var(--focus), var(--shadow-sm);
 }
+
 .hint{ color: var(--muted); font-size: 12px; }
 
 .two-col{
   grid-template-columns: 1fr;
 }
+
 .legend{
   display: grid;
   gap: 4px;
@@ -253,26 +248,23 @@ body{
 }
 
 .form-error{
-  color: #b42318; /* dezent Rot */
+  color: #b42318;
   min-height: 18px;
   margin: 0;
   font-size: 13px;
 }
 
-/* Responsive --------------------------------------------------------------- */
 @media (max-width: 560px){
   .two-col{ grid-template-columns: 1fr; }
 }
 @media (max-width: 420px){
-  .controls{ grid-template-columns: 1fr; } /* Buttons stapeln */
+  .controls{ grid-template-columns: 1fr; }
 }
 
-/* Motion preference --------------------------------------------------------- */
 @media (prefers-reduced-motion: reduce){
   .btn, .field input{ transition: none; }
 }
 
-/* Intro Modal Styling ------------------------------------------------------ */
 #intro-modal .modal-card {
   max-width: 600px;
   text-align: left;
@@ -288,13 +280,11 @@ body{
   margin-bottom: 6px;
 }
 
-/* Sanftes Erscheinen */
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(-10px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* Disabled button (z. B. Heatmap während Tracking) */
 .btn.disabled {
   opacity: 0.4;
   pointer-events: none;
@@ -308,36 +298,30 @@ body{
   cursor: default;
 }
 
-/* Start/Stop Button Farben ------------------------------------------- */
-
-/* Grüner Start-Button */
 .btn.start-active {
-  background: #1fa22e !important;   /* Grün */
+  background: #1fa22e !important;
   color: #ffffff !important;
   border-color: transparent !important;
 }
 
-/* Roter Stop-Button */
 .btn.stop-active {
-  background: #d11d1d !important;   /* Rot */
+  background: #d11d1d !important;
   color: #ffffff !important;
   border-color: transparent !important;
 }
 
-/* Intro-Modal: Inhalt scrollbar machen */
 #intro-modal .modal-card {
-  max-height: 90vh;     /* Modal darf 90% der Höhe einnehmen */
+  max-height: 90vh;
   display: flex;
   flex-direction: column;
 }
 
 #intro-modal .modal-body {
-  overflow-y: auto;     /* Vertikales Scrollen */
-  padding-right: 8px;   /* Platz für Scrollbar */
-  max-height: 70vh;     /* Inhalt darf scrollen */
+  overflow-y: auto;
+  padding-right: 8px;
+  max-height: 70vh;
 }
 
-/* Help Button oben rechts */
 .help-btn {
   position: fixed;
   top: 10px;
@@ -351,7 +335,7 @@ body{
   font-size: 20px;
   font-weight: 700;
   cursor: pointer;
-  z-index: 99999; /* über allem */
+  z-index: 99999;
   box-shadow: var(--shadow-sm);
   transition: transform 120ms ease, box-shadow 120ms ease;
 }
@@ -396,15 +380,13 @@ body{
   font-size: 1rem;
 }
 
-/* Modal: Buttons nebeneinander */
 .modal-actions {
   display: flex;
   flex-direction: row;
-  justify-content: space-between; /* verteilt die Buttons gleichmäßig */
-  gap: 12px;                      /* Abstand zwischen Buttons */
+  justify-content: space-between;
+  gap: 12px;
 }
 
-/* Buttons sollen gleich breit sein */
 .modal-actions .btn {
   flex: 1;
   text-align: center;
@@ -413,7 +395,7 @@ body{
 .user-info-bar {
   position: absolute;
   top: 16px;
-  right: 60px; /* Platz für Help-Button */
+  right: 60px;
   display: flex;
   gap: 12px;
   align-items: center;
@@ -426,12 +408,10 @@ body{
   color: var(--muted);
 }
 
-/* Important: modal-card must be the reference for the X */
 #auth-modal .modal-card {
-  position: relative;   /* ← NEU */
+  position: relative;
 }
 
-/* Close button styled like a real button */
 .auth-close-btn {
   position: absolute;
   top: 10px;
@@ -440,9 +420,9 @@ body{
   width: 34px;
   height: 34px;
 
-  background: var(--surface);       /* leicht grauer Hintergrund */
-  border: 1px solid var(--border);  /* feiner Rand */
-  border-radius: 50%;               /* macht es rund */
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 50%;
 
   font-size: 20px;
   line-height: 1;
@@ -453,28 +433,25 @@ body{
   align-items: center;
   justify-content: center;
 
-  box-shadow: var(--shadow-sm);     /* feiner Schatten wie bei deinen Buttons */
+  box-shadow: var(--shadow-sm);
   transition: 0.15s ease;
 }
 
-/* Hover-Effekt: Button wird etwas dunkler + stärkerer Schatten */
 .auth-close-btn:hover {
   background: #e8e8eb;
   box-shadow: var(--shadow-md);
 }
 
-/* Klick-Effekt */
 .auth-close-btn:active {
   transform: scale(0.95);
   box-shadow: var(--shadow-sm);
 }
 
-
 .header-right {
   display: flex;
   gap: 12px;
   align-items: center;
-  position: relative; /* Sicherstellen, dass kein absolute drinsteht */
+  position: relative;
 }
 
 .auth-center {
@@ -484,10 +461,9 @@ body{
   gap: 6px;
 }
 
-/* Persönliche Angaben Button */
 .profile-btn {
   position: fixed;
-  top: 52px;             /* direkt unter dem Help-Button */
+  top: 52px;
   right: 12px;
   width: 32px;
   height: 32px;
@@ -516,9 +492,177 @@ body{
   box-shadow: var(--shadow-sm);
 }
 
-/* Make modal body scrollable */
 .modal .modal-body {
-  max-height: 60vh;        /* Höhe begrenzen */
-  overflow-y: auto;        /* Scrollen aktivieren */
-  padding-right: 6px;      /* Verhindert abgeschnittenen Text */
+  max-height: 60vh;
+  overflow-y: auto;
+  padding-right: 6px;
 }
+
+.traj-entry {
+  list-style: none;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 12px 16px;
+  border-radius: var(--radius-md);
+  margin-bottom: 10px;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 500;
+  box-shadow: var(--shadow-sm);
+  transition: 0.15s ease;
+}
+
+.traj-entry:hover {
+  background: #f0f0f4;
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.traj-entry:active {
+  transform: translateY(0px);
+  box-shadow: var(--shadow-sm);
+}
+
+.traj-entry::after {
+  content: "›";
+  float: right;
+  font-size: 18px;
+  opacity: 0.5;
+  transition: 0.2s;
+}
+
+.traj-entry:hover::after {
+  opacity: 0.8;
+  transform: translateX(3px);
+}
+
+#profile-modal .modal-body > hr:first-of-type {
+  margin: 0px 0;
+}
+
+#profile-modal .modal-body p:nth-of-type(2) {
+  margin-top: -8px;
+}
+
+#profile-modal .modal-body #profile-username {
+  font-size: 18px;
+  font-weight: 700;
+  color: #000;
+}
+
+#profile-modal .modal-body p:first-of-type strong {
+  font-size: 18px;
+}
+
+#danger-bar-container {
+  width: 85%;
+  margin: 24px auto 20px auto;
+}
+
+#danger-bar {
+  position: relative;
+  height: 16px;
+  border-radius: 10px;
+  background: linear-gradient(to right,
+      #00cc00,
+      #9acd32,
+      #ffff00,
+      #ff8c00,
+      #ff0000 
+  );
+}
+
+.danger-marker {
+  position: absolute;
+  top: -4px;
+  width: 4px;
+  height: 26px;
+  background: #111;
+  border-radius: 2px;
+}
+
+.danger-marker.average {
+  background: #444;
+}
+
+.danger-bar-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  margin-top: 4px;
+  color: #333;
+}
+
+#danger-index-marker::after {
+  content: "Trajectory";
+  position: absolute;
+  bottom: 32px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 12px;
+  color: #111;
+  white-space: nowrap;
+}
+
+#danger-average-marker::after {
+  content: "Average";
+  position: absolute;
+  top: 42px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 12px;
+  color: #444;
+  white-space: nowrap;
+}
+
+#danger-index-marker::before {
+  content: "";
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 8px;
+  height: 8px;
+  background: #111;
+  border-radius: 50%;
+}
+
+#danger-average-marker::before {
+  content: "";
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 8px;
+  height: 8px;
+  background: #444;
+  border-radius: 50%;
+}
+
+#intro-modal .modal-body p {
+  margin-top: 8px;
+  margin-bottom: 8px;
+}
+
+#intro-modal .modal-body h3 {
+  margin-top: 16px;
+  margin-bottom: 8px;
+}
+
+#intro-modal .perimeter-info p:nth-of-type(2) {
+  margin-bottom: 14px;
+}
+
+#intro-modal .perimeter-info p:first-of-type {
+  margin-bottom: 16px;
+}
+
+.danger-bar-legend {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #444;
+  margin-top: 30px;
+  padding: 0 2px;
+}
+
