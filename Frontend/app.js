@@ -1,4 +1,4 @@
-//Minimalistische Single-Screen App mit Leaflet + Geolocation + Modal
+//Minimalist single-screen app with Leaflet + geolocation + modal
 
 let CURRENT_USER_ID = null;
 const authToggleBtn = document.getElementById("auth-toggle-btn");
@@ -6,18 +6,18 @@ const loggedInAsEl = document.getElementById("logged-in-as");
 
 (() => {
 
-  //Karten-Startposition und Zoomlevel
+  //Map start position and zoom level
   const INITIAL_CENTER = [47.3769, 8.5417];
   const INITIAL_ZOOM = 13;
 
-  //Referenzen auf UI-Elemente
+  //References to UI elements
   const mapEl = document.getElementById('map');
   const statusEl = document.getElementById('status');
   const toggleBtn = document.getElementById('toggle-track');
   toggleBtn.classList.add('start-active');
   const hazardBtn = document.getElementById('save-hazard');
 
-  //Danger Spot Modal Elemente
+  //Danger Spot Modal Elements
   const modal = document.getElementById('hazard-modal');
   const modalCloseBtn = document.getElementById('modal-close');
   const cancelModalBtn = document.getElementById('cancel-modal');
@@ -32,7 +32,7 @@ const loggedInAsEl = document.getElementById("logged-in-as");
   const heatmapNo = document.getElementById("heatmap-no");
   const heatmapToggleBtn = document.getElementById("toggle-heatmap");
 
-  // Tracking Zustand/ Variablen
+  //Tracking status/variables
   let map, tileLayer;
   let isTracking = false;
   let watchId = null;
@@ -71,11 +71,11 @@ const loggedInAsEl = document.getElementById("logged-in-as");
 
 
     if (active) {
-        //Stop = Rot
+        //Stop = red
         toggleBtn.classList.remove('start-active');
         toggleBtn.classList.add('stop-active');
     } else {
-        //Start = Grün
+        //Start = green
         toggleBtn.classList.remove('stop-active');
         toggleBtn.classList.add('start-active');
     }
@@ -85,7 +85,7 @@ const loggedInAsEl = document.getElementById("logged-in-as");
     return Math.max(min, Math.min(max, val));
   }
 
-  //Hilfsfunktion: Distanz zwischen zwei GPS-Punkten
+  //Help function: Distance between two GPS points
   function distanceInMeters(lat1, lon1, lat2, lon2) {
     const R = 6371000;
     const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -139,7 +139,7 @@ const loggedInAsEl = document.getElementById("logged-in-as");
     window.addEventListener('orientationchange', () => setTimeout(() => map.invalidateSize(), 150));
   }
 
-  //Perimeter laden und darstellen
+  //Load and display perimeter
   fetch("project_area.geojson")
     .then((r) => r.json())
     .then((data) => {
@@ -243,9 +243,9 @@ const loggedInAsEl = document.getElementById("logged-in-as");
   }
 
     //Buffer Handling
-    let hazardBuffers = []; //Liste der Buffer-Polygone
-    let insideBuffer = false; //Status, ob Nutzer aktuell in einem Buffer ist
-    let currentBufferId = null;   //für Cluster-Logik
+    let hazardBuffers = []; 
+    let insideBuffer = false;
+    let currentBufferId = null;
 
 
     async function loadBuffers() {
@@ -254,11 +254,11 @@ const loggedInAsEl = document.getElementById("logged-in-as");
         //const response = await fetch('https://gta25aprd.ethz.ch/app/get_buffers');
         const geojson = await response.json();
 
-        //Buffer auf der Karte anzeigen
+        //Display buffer on the map
         L.geoJSON(geojson, {
           color: '#e03131',
-          weight: 1, // hier 0 einsetzen damit Buffer nicht sichtbar sind auf Karte
-          fillOpacity: 0.3 // hier 0 einsetzen damit Buffer nicht sichtbar sind auf Karte
+          weight: 0, //Enter 0 here so that buffers are not visible on the map.
+          fillOpacity: 0 //Enter 0 here so that buffers are not visible on the map.
         }).addTo(map);
 
         hazardBuffers = geojson.features;
@@ -392,18 +392,18 @@ const loggedInAsEl = document.getElementById("logged-in-as");
 
   //Geolocation
   async function startTracking() {
-    //Heatmap immer deaktivieren, wenn eine neue Trajektorie startet
+    //Always disable heatmap when a new trajectory starts
     if (heatLayer && heatmapVisible) {
       map.removeLayer(heatLayer);
       heatmapVisible = false;
       heatmapToggleBtn.textContent = "Show heat map";
     }
 
-    //Heatmap-Button deaktivieren
+    //Deactivate heat map button
     heatmapToggleBtn.classList.add("disabled");
 
 
-    //Buffer-Zustand zurücksetzen, sonst kommt kein Popup
+    //Reset buffer state, otherwise no popup will appear
     currentBufferId = null;
     if (polyline) {
       polyline.remove();
@@ -412,7 +412,7 @@ const loggedInAsEl = document.getElementById("logged-in-as");
       currentDot.remove();
     }
 
-    //Neue Trajektorie initialisieren
+    //Initialize new trajectory
     polyline = L.polyline([], {
       color: '#3b5bdb',
       weight: 4,
@@ -435,14 +435,14 @@ const loggedInAsEl = document.getElementById("logged-in-as");
       return;
     }
 
-    //Lokale Trajektorie erstellen
+    //Create local trajectory
     localTrajectory = {
       id: Date.now(),
       started_at: new Date().toISOString(),
       ended_at: null
     };
 
-    //Lokale Speicher-Arrays zurücksetzen
+    //Reset local storage arrays
     localTrajectoryPoints = [];
     localPOIs = [];
     trajectoryCoords = [];
@@ -455,7 +455,7 @@ const loggedInAsEl = document.getElementById("logged-in-as");
     hazardBtn.classList.remove("disabled");
     hazardBtn.removeAttribute("disabled");
 
-    //Ersten GPS-Punkt lokal speichern
+    //Save first GPS point locally
     navigator.geolocation.getCurrentPosition(pos => {
       const { latitude, longitude } = pos.coords;
 
@@ -476,7 +476,7 @@ const loggedInAsEl = document.getElementById("logged-in-as");
       timeout: 10000
     });
 
-    //Alle 8 Sekunden Trajectory_Point aufnehmen
+    //Record trajectory_point every 8 seconds
     saveTimer = setInterval(() => {
       if (lastPosition) {
         localTrajectoryPoints.push({
@@ -504,14 +504,14 @@ const loggedInAsEl = document.getElementById("logged-in-as");
       saveTimer = null;
     }
 
-    //Nur UI/ Status, keine DB
+    //Only UI/status, no database
     setTrackingUI(false);
     updateStatus('Tracking ended. You can now save or delete the trajectory.');
     hazardBtn.disabled = true;
     hazardBtn.classList.add("disabled");
     hazardBtn.setAttribute("disabled", "true");
 
-    //Heatmap Auswahl
+    //Heatmap selection
     if (heatmapModal) heatmapModal.hidden = false;
     heatmapToggleBtn.classList.remove("disabled");
     heatmapToggleBtn.removeAttribute("disabled");
@@ -539,10 +539,10 @@ const loggedInAsEl = document.getElementById("logged-in-as");
 
     updateStatus(`Last position: ${fmtLatLng(latlng)} (±${Math.round(accuracy)} m)`);
 
-    //Popup öffnen und automatisch schliessen
+    //Open pop-up and close automatically
     const bufferId = getCurrentBufferId(latitude, longitude);
 
-    //Inside zu outside (Popup schliessen)
+    //Inside to outside (close popup)
     if (bufferId === null && currentBufferId !== null) {
       console.log("➡️ Left buffer, closing popup…");
 
@@ -553,7 +553,7 @@ const loggedInAsEl = document.getElementById("logged-in-as");
       currentBufferId = null;
     }
 
-    //Outside zu inside (Popup öffnen)
+    //Outside zu inside (open Popup)
     if (bufferId !== null && bufferId !== currentBufferId) {
       console.log("⬅️ Entered new buffer:", bufferId);
       currentBufferId = bufferId;
@@ -619,7 +619,7 @@ const loggedInAsEl = document.getElementById("logged-in-as");
   //Button Handlers
   toggleBtn.addEventListener('click', () => {
 
-    // Nicht eingeloggt -> Tracking blockieren
+    // Not logged in -> Block tracking
     if (!CURRENT_USER_ID) {
       document.getElementById("login-required-modal").hidden = false;
       return;
@@ -690,11 +690,11 @@ const loggedInAsEl = document.getElementById("logged-in-as");
   document.getElementById("auth-close").addEventListener("click", () => {
     document.getElementById("auth-modal").hidden = true;
 
-    //Immer zurück auf Login-Ansicht
+    //Always return to login view
     document.getElementById("login-view").hidden = false;
     document.getElementById("register-view").hidden = true;
 
-    //Felder leeren beim schliessen
+    //Clear fields when closing
     document.getElementById("login-username").value = "";
     document.getElementById("login-password").value = "";
     document.getElementById("register-username").value = "";
@@ -709,7 +709,7 @@ const loggedInAsEl = document.getElementById("logged-in-as");
   const trajDelete = document.getElementById('traj-delete');
   const trajSave = document.getElementById('traj-save');
 
-  //Continue (Modal schliessen, Tracking läuft weiter)
+  //Continue (close modal, tracking continues)
   trajContinue.addEventListener('click', () => {
     trajStopModal.hidden = true;
   });
@@ -718,16 +718,16 @@ const loggedInAsEl = document.getElementById("logged-in-as");
   trajDelete.addEventListener('click', () => {
     trajStopModal.hidden = true;
 
-    //Tracking stoppen ohne speichern
+    //Delete (stop tracking + discard trajectory)
     if (watchId !== null) navigator.geolocation.clearWatch(watchId);
     if (saveTimer) clearInterval(saveTimer);
 
-    //Lokale Daten komplett löschen
+    //Delete all local data
     localTrajectory = null;
     localTrajectoryPoints = [];
     localPOIs = [];
 
-    //Linienzug entfernen
+    //Remove line
     trajectoryCoords = [];
 
     setTrackingUI(false);
@@ -746,19 +746,19 @@ const loggedInAsEl = document.getElementById("logged-in-as");
   });
 
 
-  //Save (Tracking stoppen und DB speichern)
+  //Save (stop tracking and save DB)
   trajSave.addEventListener('click', async () => {
     trajStopModal.hidden = true;
 
 
-    //Tracking stoppen
+    //stop tracking
     if (watchId !== null) navigator.geolocation.clearWatch(watchId);
     if (saveTimer) clearInterval(saveTimer);
 
-    //Endzeit setzen
+    //Set end time
     localTrajectory.ended_at = new Date().toISOString();
 
-    //Finalen Endpunkt als trajectory_point hinzufügen
+    //Add final endpoint as trajectory_point
     if (lastPosition) {
       localTrajectoryPoints.push({
         lat: lastPosition.lat,
@@ -771,29 +771,29 @@ const loggedInAsEl = document.getElementById("logged-in-as");
 
     updateStatus("Saving trajectory…");
 
-    //Trajektorie speichern
+    //Save trajectory
     const newId = await saveTrajectoryToDB(localTrajectory);
     if (!newId) {
       alert("Error: Could not save trajectory.");
       return;
     }
 
-    //Alle Punkte speichern
+    //Save all points
     for (const p of localTrajectoryPoints) {
       await saveTrajectoryPointToDB(p, newId);
     }
 
-    //POIs speichern
+    //save POIs
     for (const poi of localPOIs) {
       await savePOIToDB(poi, newId);
     }
 
-    //Geometrie (LineString) speichern
+    //Save geometry
     await saveTrajectoryGeometryToDB(localTrajectoryPoints, newId);
 
     updateStatus("Trajectory saved to DB.");
 
-    //Danger Index berechnen und in Cache speichern
+    //Calculate danger index and store in cache
     await fetch(`http://localhost:8989/danger_index_save/${newId}`, {
         method: "POST"
     });
@@ -842,7 +842,7 @@ const loggedInAsEl = document.getElementById("logged-in-as");
 
   
 
-  //Login/ Register Logik
+  //Login/ Register logic
   async function loginUser(username, password) {
     const res = await fetch("http://localhost:8989/login", {
       method: "POST",
@@ -897,13 +897,13 @@ const loggedInAsEl = document.getElementById("logged-in-as");
     localStorage.removeItem("auth_expires");
 
 
-    //Eigenes Logout-Modal anzeigen
+    //Display own logout modal
     document.getElementById("logout-modal").hidden = false;
     return;
   }
 
 
-    //Felder leeren bevor Modal geöffnet wird
+    //Clear fields before modal opens
     document.getElementById("login-username").value = "";
     document.getElementById("login-password").value = "";
     document.getElementById("register-username").value = "";
@@ -911,7 +911,7 @@ const loggedInAsEl = document.getElementById("logged-in-as");
     document.getElementById("auth-error").textContent = "";
     document.getElementById("register-error").textContent = "";
 
-    //sonst Login öffnen
+    //otherwise open login
     document.getElementById("auth-modal").hidden = false;
   });
 
@@ -941,7 +941,7 @@ const loggedInAsEl = document.getElementById("logged-in-as");
     updateAuthUI();
     console.log("Logged in as user", CURRENT_USER_ID);
 
-    //Login-Daten speichern (gültig für 1h)
+    //Save login details (valid for 1 hour)
     const expiresAt = Date.now() + 1 * 60 * 60 * 1000;
 
     localStorage.setItem("auth_user_id", CURRENT_USER_ID);
@@ -975,7 +975,7 @@ const loggedInAsEl = document.getElementById("logged-in-as");
     updateAuthUI();
     console.log("Registered + logged in as user", CURRENT_USER_ID);
 
-    //Login-Daten speichern (gültig für 1h)
+    //Save login details (valid for 1 hour)
     const expiresAt = Date.now() + 1 * 60 * 60 * 1000;
 
     localStorage.setItem("auth_user_id", CURRENT_USER_ID);
@@ -1071,7 +1071,7 @@ const loggedInAsEl = document.getElementById("logged-in-as");
 
     const barWidth = bar.offsetWidth;
 
-    //Werte von 0–4 -> Prozent
+    //Values from 0–4 -> Percent
     const pos = (dangerValue / 4) * 100; 
     const avgPos = (averageValue / 4) * 100;
 
@@ -1080,14 +1080,13 @@ const loggedInAsEl = document.getElementById("logged-in-as");
   }
 
 
-  //Trajectory Detail (nur wenn ≥90% inside Project Area)
+  //Trajectory Detail (only if ≥90% inside Project Area)
   async function openTrajectoryDetails90(trajId) {
     document.getElementById("traj-danger-average").textContent = "Loading…";
     const modal = document.getElementById("trajectory-detail-modal");
     const durationEl = document.getElementById("traj-duration");
     const distanceEl = document.getElementById("traj-distance");
     const speedEl = document.getElementById("traj-speed");
-    const ptsList = document.getElementById("traj-points-list");
 
     const res = await fetch(`http://localhost:8989/trajectory_details_90/${trajId}`);
     const data = await res.json();
@@ -1099,7 +1098,7 @@ const loggedInAsEl = document.getElementById("logged-in-as");
         return;
     }
 
-    //Dauer
+    //Time
     const start = new Date(data.started_at);
     const end = new Date(data.ended_at);
     const durationMs = end - start;
@@ -1108,7 +1107,7 @@ const loggedInAsEl = document.getElementById("logged-in-as");
     durationEl.textContent = `${minutes} min ${seconds} sec`;
 
 
-    //Distanz
+    //Distance
     let dist = 0;
     for (let i = 1; i < data.points.length; i++) {
         const p1 = data.points[i - 1];
@@ -1117,7 +1116,7 @@ const loggedInAsEl = document.getElementById("logged-in-as");
     }
     distanceEl.textContent = `${(dist / 1000).toFixed(2)} km`;
 
-    //Geschwindigkeit (m/s)
+    //Speed (m/s)
     const totalSeconds = minutes * 60 + seconds;
 
     let speed_ms = 0;
@@ -1129,16 +1128,7 @@ const loggedInAsEl = document.getElementById("logged-in-as");
 
 
 
-
-    //Punkte
-    ptsList.innerHTML = "";
-    data.points.forEach(p => {
-        const li = document.createElement("li");
-        li.textContent = `${new Date(p.ts).toLocaleTimeString()} — ${p.lat}, ${p.lng}`;
-        ptsList.appendChild(li);
-    });
-
-    //Mini-Karte mit Trajektorie zeichnen
+    //Draw mini map with trajectory
     if (!trajMap) {
         trajMap = L.map('traj-map', {
             zoomControl: false,
@@ -1173,14 +1163,14 @@ const loggedInAsEl = document.getElementById("logged-in-as");
     await loadDangerIndex(trajId);
     await loadAverageDangerIndex();
 
-    //Danger Values holen
+    //Get danger Values
     const d1 = parseFloat(document.getElementById("traj-danger").textContent);
     const d2 = parseFloat(document.getElementById("traj-danger-average").textContent);
 
     //Marker updaten
     updateDangerBar(d1, d2);
 
-    //Scroll danach
+    //Scroll
     setTimeout(() => {
         const body = modal.querySelector(".modal-body");
         if (body) body.scrollTop = 0;
@@ -1189,7 +1179,7 @@ const loggedInAsEl = document.getElementById("logged-in-as");
   }
 
 
-  //Zurück-Button im Trajektorie-Detail-Fenster
+  //Back button in the trajectory details window
   document.getElementById("traj-detail-back").addEventListener("click", () => {
     document.getElementById("trajectory-detail-modal").hidden = true;
     document.getElementById("profile-modal").hidden = false;
@@ -1208,20 +1198,20 @@ const loggedInAsEl = document.getElementById("logged-in-as");
   //Boot
   document.addEventListener('DOMContentLoaded', () => {
 
-    //Login-Prüfung
+    //Login
     const savedId = localStorage.getItem("auth_user_id");
     const savedUser = localStorage.getItem("auth_username");
     const expires = localStorage.getItem("auth_expires");
 
     if (savedId && savedUser && expires) {
       if (Date.now() < Number(expires)) {
-        //Login wiederherstellen
+        //Restore login
         CURRENT_USER_ID = Number(savedId);
         CURRENT_USERNAME = savedUser;
         updateAuthUI();
         console.log("Auto-login restored:", CURRENT_USERNAME);
       } else {
-        //Abgelaufen → Daten löschen
+        //Expired -> Delete data
         localStorage.removeItem("auth_user_id");
         localStorage.removeItem("auth_username");
         localStorage.removeItem("auth_expires");
@@ -1234,7 +1224,7 @@ const loggedInAsEl = document.getElementById("logged-in-as");
     loadBuffers();
     hazardBtn.disabled = true;
 
-    //Perimeter laden
+    //Load perimeter
     fetch("project_area.geojson")
       .then(r => r.json())
       .then(geo => {
@@ -1247,7 +1237,7 @@ const loggedInAsEl = document.getElementById("logged-in-as");
     const levelSlider = document.getElementById('level');
     const levelOutput = document.getElementById('level-output');
 
-    //Initialwert anzeigen
+    //Display initial value
     if (levelSlider && levelOutput) {
       levelOutput.textContent = levelSlider.value;
 
@@ -1257,14 +1247,14 @@ const loggedInAsEl = document.getElementById("logged-in-as");
     }
 
       
-    //Instruction Modal Logik
+    //Instruction Modal Logic
     const helpBtn = document.getElementById('help-btn');
     const introModal = document.getElementById('intro-modal');
     const introClose = document.getElementById('intro-close');
 
     if (helpBtn && introModal && introClose) {
 
-      //Öffnen über ? Button
+      //Open via ? button
       helpBtn.addEventListener('click', () => {
         introModal.hidden = false;
 
@@ -1291,7 +1281,7 @@ const loggedInAsEl = document.getElementById("logged-in-as");
 
     if (profileBtn && profileModal) {
       profileBtn.addEventListener("click", () => {
-        //Benutzerinformationen aktualisieren
+        //Update user information
         document.getElementById("profile-username").textContent =
           CURRENT_USERNAME || "Not logged in";
         
@@ -1311,7 +1301,7 @@ const loggedInAsEl = document.getElementById("logged-in-as");
 })();
 
 
-//WFS INSERTS
+//WFS insert
 wfs = 'https://baug-ikg-gis-01.ethz.ch:8443/geoserver/GTA25_project/wfs';
 
 //POI insert
