@@ -205,7 +205,8 @@ body{
 }
 
 .field input[type="text"],
-.field input[type="number"]{
+.field input[type="number"],
+.field input[type="password"] {
   width: 100%;
   padding: 12px 14px;
   border-radius: var(--radius-md);
@@ -214,6 +215,13 @@ body{
   font-size: 16px;
   transition: box-shadow 120ms ease, border-color 120ms ease;
 }
+
+.field input:focus {
+  outline: none;
+  border-color: transparent;
+  box-shadow: var(--focus), var(--shadow-sm);
+}
+
 
 .field input:focus{
   outline: none;
