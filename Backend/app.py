@@ -23,7 +23,7 @@ def test_deploy():
 def home():
     return jsonify('Connection established'), 200
 
-#DB Abfrage Kontrolle
+#DB query control
 @app.route('/test_data', methods=['GET'])
 def test_data():
     """
@@ -44,7 +44,7 @@ def test_data():
 
     return jsonify(data), 200
 
-#Buffer (7m Radius) um Unfallstellen
+#Buffer (7m radius) around accident sites
 @app.route('/get_buffers', methods=['GET'])
 @app.route('/app/test_deploy/get_buffers', methods=['GET'])
 def get_buffers():
@@ -88,7 +88,7 @@ def get_buffers():
 
     return merged_gdf.to_json(), 200, {"Content-Type": "application/json"}
 
-#alle POIs nutzen für Heatmap
+#Use all POIs for heatmap
 @app.route("/heatmap", methods=["GET"])
 @app.route("/app/test_deploy/heatmap", methods=["GET"])
 def get_heatmap():
@@ -127,7 +127,7 @@ def get_heatmap():
 
 
 
-# DB Verbindungs-hilfsfunktion + Passwort-hashing
+#DB connection helper function + password hashing
 with open("db_login.json") as f:
     cfg = json.load(f)
 
@@ -143,7 +143,7 @@ def get_conn():
 def hash_pw(pw):
     return hashlib.sha256(pw.encode()).hexdigest()
 
-#User-Registrierung
+#User registration
 @app.post("/register")
 def register():
     data = request.get_json()
@@ -186,11 +186,11 @@ def login():
 
     return jsonify({"success": True, "user_id": row[0]})
 
-# Perimeter laden für 90%-Logik und Danger Index
+#Load perimeter for 90% logic and danger index
 project_area = gpd.read_file("project_area.geojson")
 perimeter_geom = project_area.geometry.unary_union
 
-#Trajectory details (ohne 90% Prüfung)
+#Trajectory details (without 90% verification)
 @app.route("/trajectory_details/<int:traj_id>")
 def trajectory_details(traj_id):
     conn = get_conn()
@@ -225,7 +225,7 @@ def trajectory_details(traj_id):
         } for p in pts]
     })
 
-#Trajektorien 90% innerhalb von Perimeter
+#Trajectories 90% within perimeter
 @app.route("/user_trajectories_90/<int:user_id>")
 def user_trajectories_90(user_id):
     """
@@ -280,7 +280,7 @@ def user_trajectories_90(user_id):
     conn.close()
     return jsonify(result)
 
-#Trajektorien Details mit 90% Filter
+#Trajectories Details with 90% filter
 @app.route("/trajectory_details_90/<int:traj_id>")
 def trajectory_details_90(traj_id):
     """
@@ -405,8 +405,9 @@ def danger_index(traj_id):
             hit = gdf[gdf.contains(pt)]
 
             if len(hit) > 0:
-                sev_value = hit.iloc[0]["sev"]
+                sev_value = hit["sev"].max()
                 danger_sum += sev_value
+
 
         danger_index = danger_sum / total
 
@@ -419,7 +420,7 @@ def danger_index(traj_id):
         print("DANGER INDEX ERROR:", e)
         return jsonify({"error": str(e)}), 500
 
-#Danger Index Speicherung (Cache)
+#Danger Index Storage (Cache)
 @app.route("/danger_index_save/<traj_id>", methods=["POST"])
 def danger_index_save(traj_id):
     """
@@ -498,7 +499,9 @@ def danger_index_save(traj_id):
             pt = Point(lng, lat)
             hit = gdf[gdf.contains(pt)]
             if len(hit) > 0:
-                danger_sum += hit.iloc[0]["sev"]
+                max_sev = hit["sev"].max()
+                danger_sum += max_sev
+
 
         danger_index = danger_sum / len(inside_pts)
 
@@ -523,7 +526,7 @@ def danger_index_save(traj_id):
         print("ERROR danger_index_save:", e)
         return jsonify({"error": str(e)}), 500
 
-#Danger Index Durchschnitt
+#Danger Index Average
 @app.get("/danger_index_average")
 def danger_index_average():
     """
