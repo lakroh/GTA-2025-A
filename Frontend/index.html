@@ -24,12 +24,12 @@
 </head>
 
 <body>
-  <!-- AUTH MODAL (LOGIN + REGISTER) -->
+  <!-- Auth Modal (Login + Register) -->
   <div id="auth-modal" class="modal" role="dialog" aria-modal="true" hidden>
     <div class="modal-card">
       <button id="auth-close" class="icon-btn auth-close-btn" aria-label="Close">×</button>
 
-      <!-- LOGIN FORM -->
+      <!-- Login Form -->
       <div id="login-view">
         <div class="modal-header">
           <h2>Login</h2>
@@ -62,7 +62,7 @@
       </div>
 
 
-      <!-- REGISTER FORM -->
+      <!-- Register Form -->
       <div id="register-view" hidden>
         <div class="modal-header">
           <h2>Register</h2>
@@ -114,7 +114,7 @@
     </div>
   </header>
 
-  <!-- Hauptbereich -->
+  <!-- main area -->
   <main class="app-main" role="main" aria-label="Kartenansicht und Steuerung">
     <div id="map" aria-label="OpenStreetMap Karte"></div>
 
@@ -273,7 +273,7 @@
     </div>
   </div>
 
-  <!-- Modal: Show heat map -->
+  <!-- Modal: Show heatmap -->
   <div id="heatmap-modal" class="modal" role="dialog" aria-modal="true" hidden>
     <div class="modal-card">
       <div class="modal-header">
@@ -405,12 +405,6 @@
             </div>
         </div>
 
-        <hr>
-
-        <h3>Recorded points</h3>
-        <ul id="traj-points-list"></ul>
-
-        <hr>
         <h3>Trajectory map</h3>
         <div id="traj-map" style="height: 300px; border-radius: 12px; margin-top: 10px;"></div>
 
@@ -425,7 +419,7 @@
   </div>
 
 
-  <!-- JAVASCRIPT -->
+  <!-- Javascript -->
   <script
     src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
     integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
