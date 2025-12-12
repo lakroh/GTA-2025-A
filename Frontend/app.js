@@ -250,8 +250,8 @@ const loggedInAsEl = document.getElementById("logged-in-as");
 
     async function loadBuffers() {
       try {
-        const response = await fetch('http://localhost:8989/get_buffers');
-        //const response = await fetch('https://gta25aprd.ethz.ch/app/get_buffers');
+        //const response = await fetch('http://localhost:8989/get_buffers');
+        const response = await fetch('https://gta25aprd.ethz.ch/app/get_buffers');
         const geojson = await response.json();
 
         //Display buffer on the map
@@ -270,8 +270,8 @@ const loggedInAsEl = document.getElementById("logged-in-as");
 
     async function loadHeatmap() {
       try {
-        const response = await fetch("http://localhost:8989/heatmap");
-        //const response = await fetch("https://gta25aprd.ethz.ch/app/heatmap");
+        //const response = await fetch("http://:8989/heatmap");
+        const response = await fetch("https://gta25aprd.ethz.ch/app/heatmap");
         const data = await response.json();
 
         const heatData = data
@@ -794,9 +794,8 @@ const loggedInAsEl = document.getElementById("logged-in-as");
     updateStatus("Trajectory saved to DB.");
 
     //Calculate danger index and store in cache
-    await fetch(`http://localhost:8989/danger_index_save/${newId}`, {
-        method: "POST"
-    });
+    //await fetch(`http://localhost:8989/danger_index_save/${newId}`, {method: "POST"});
+    await fetch(`https://gta25aprd.ethz.ch/app/danger_index_save/${newId}`, {method: "POST"});
 
     loadUserTrajectories();
     loadAverageDangerIndex();
@@ -843,25 +842,20 @@ const loggedInAsEl = document.getElementById("logged-in-as");
   
 
   //Login/ Register logic
-  async function loginUser(username, password) {
-    const res = await fetch("http://localhost:8989/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, password })
-    });
+  //async function loginUser(username, password) {const res = await fetch("http://localhost:8989/login", {method: "POST",headers: { "Content-Type": "application/json" },body: JSON.stringify({ username, password })});
+  async function loginUser(username, password) {const res = await fetch("https://gta25aprd.ethz.ch/app/login", {method: "POST",headers: { "Content-Type": "application/json" },body: JSON.stringify({ username, password })});
 
+                                                
     const data = await res.json();
     if (!data.success) return null;
     return data.user_id;
   }
 
-  async function registerUser(username, password) {
-    const res = await fetch("http://localhost:8989/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, password })
-    });
+  //async function registerUser(username, password) {const res = await fetch("http://localhost:8989/register", {method: "POST",headers: { "Content-Type": "application/json" },body: JSON.stringify({ username, password })});
+  async function registerUser(username, password) {const res = await fetch("https://gta25aprd.ethz.ch/app/register", {method: "POST",headers: { "Content-Type": "application/json" },body: JSON.stringify({ username, password })});
+  
 
+                                                   
     const data = await res.json();
     if (!data.success) return null;
     return data.user_id;
@@ -1000,7 +994,11 @@ const loggedInAsEl = document.getElementById("logged-in-as");
     const list = document.getElementById("profile-trajectories");
     list.innerHTML = "Loading...";
 
-    const res = await fetch(`http://localhost:8989/user_trajectories_90/${CURRENT_USER_ID}`);
+    //const res = await fetch(`http://localhost:8989/user_trajectories_90/${CURRENT_USER_ID}`);
+    const res = await fetch(`https://gta25aprd.ethz.ch/app/user_trajectories_90/${CURRENT_USER_ID}`);
+
+
+    
     const data = await res.json();
 
     data.sort((a, b) => new Date(b.started_at) - new Date(a.started_at));
@@ -1030,7 +1028,9 @@ const loggedInAsEl = document.getElementById("logged-in-as");
 
   async function loadDangerIndex(trajId) {
     try {
-        const res = await fetch(`http://localhost:8989/danger_index/${trajId}`);
+        //const res = await fetch(`http://localhost:8989/danger_index/${trajId}`);
+        const res = await fetch(`https://gta25aprd.ethz.ch/app/danger_index/${trajId}`);
+      
         const data = await res.json();
 
         if (data.error) {
@@ -1049,7 +1049,10 @@ const loggedInAsEl = document.getElementById("logged-in-as");
 
   async function loadAverageDangerIndex() {
     try {
-        const res = await fetch("http://localhost:8989/danger_index_average");
+        //const res = await fetch("http://localhost:8989/danger_index_average");
+        const res = await fetch("https://gta25aprd.ethz.ch/app/danger_index_average");
+
+      
         const data = await res.json();
 
         document.getElementById("traj-danger-average").textContent =
@@ -1088,7 +1091,10 @@ const loggedInAsEl = document.getElementById("logged-in-as");
     const distanceEl = document.getElementById("traj-distance");
     const speedEl = document.getElementById("traj-speed");
 
-    const res = await fetch(`http://localhost:8989/trajectory_details_90/${trajId}`);
+    //const res = await fetch(`http://localhost:8989/trajectory_details_90/${trajId}`);
+    const res = await fetch(`https://gta25aprd.ethz.ch/app/trajectory_details_90/${trajId}`);
+
+    
     const data = await res.json();
     console.log("POINTS =", data.points);
 
@@ -1486,3 +1492,4 @@ async function saveTrajectoryGeometryToDB(points, trajectory_id) {
     body: postData
   });
 }
+
