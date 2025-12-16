@@ -1230,6 +1230,8 @@ const loggedInAsEl = document.getElementById("logged-in-as");
 
     //Load perimeter
     fetch("project_area.geojson")
+    //Use the line below to test the web app at Honggerberg.
+    //fetch("project_area_hoengg.geojson")
       .then(r => r.json())
       .then(geo => {
         perimeterPolygon = geo.features[0];
@@ -1490,5 +1492,6 @@ async function saveTrajectoryGeometryToDB(points, trajectory_id) {
     body: postData
   });
 }
+
 
 
