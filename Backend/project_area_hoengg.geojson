@@ -1,0 +1,8 @@
+{
+"type": "FeatureCollection",
+"name": "project_area_hoengg",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:OGC:1.3:CRS84" } },
+"features": [
+{ "type": "Feature", "properties": { "Name": null, "description": null, "timestamp": null, "begin": null, "end": null, "altitudeMode": null, "tessellate": -1, "extrude": 0, "visibility": -1, "drawOrder": null, "icon": null, "type": "linepolygon" }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 8.505869449341743, 47.410616019372313 ], [ 8.50370254089794, 47.407465411867037 ], [ 8.509510944959862, 47.405469395284342 ], [ 8.51217831096656, 47.409429323725888 ], [ 8.506447705595964, 47.411124829322176 ], [ 8.505869449341743, 47.410616019372313 ] ] ] } }
+]
+}
