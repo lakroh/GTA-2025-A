@@ -188,6 +188,8 @@ def login():
 
 #Load perimeter for 90% logic and danger index
 project_area = gpd.read_file("project_area.geojson")
+#Use the line below to test the web app at Honggerberg.
+#project_area = gpd.read_file("project_area_hoengg.geojson")
 perimeter_geom = project_area.geometry.unary_union
 
 #Trajectory details (without 90% verification)
