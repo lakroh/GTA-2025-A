@@ -28,7 +28,7 @@ Open Data:
 -> only includes accidents that actually occurred within our perimeter
 
 - Fussgaenger_in_Polygon_Copy: fid, AccidentUID, AccidentType, AccidentType_de, AccidentSeverityCategory, AccidentSeverityCategory_de, AccidentInvolvingPedestrian, AccidentInvolvingBicycle, AccidentInvolvingMotorcycle, RoadType, RoadType_de, AccidentLocation_CHLV95_E, AccidentLocation_CHLV95_N, CantonCode, MunicipalityCode, AccidentYear, AccidentMonth, AccidentMonth_de, AccidentWeekDay, AccidentWeekDay_de, AccidentHour, AccidentHour_text
--> includes 9 fake accidents on the Hoenggerberg campus to make it easier to test our web app
+-> in addition to the accidents that actually occurred within our perimeter, it also includes 9 fake accidents at Honggerberg to simplify testing of the web app
 
 Collected Data:
 - users: user_id, username, password_hash
