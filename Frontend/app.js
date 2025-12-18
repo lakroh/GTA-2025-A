@@ -252,6 +252,7 @@ const loggedInAsEl = document.getElementById("logged-in-as");
 
     async function loadBuffers() {
       try {
+        //Use the commented-out line to run the app locally. 
         //const response = await fetch('http://host:8989/get_buffers');
         const response = await fetch('https://gta25aprd.ethz.ch/app/get_buffers');
         const geojson = await response.json();
@@ -272,6 +273,7 @@ const loggedInAsEl = document.getElementById("logged-in-as");
 
     async function loadHeatmap() {
       try {
+        //Use the commented-out line to run the app locally. 
         //const response = await fetch("http://localhost:8989/heatmap");
         const response = await fetch("https://gta25aprd.ethz.ch/app/heatmap");
         const data = await response.json();
@@ -796,6 +798,7 @@ const loggedInAsEl = document.getElementById("logged-in-as");
     updateStatus("Trajectory saved to DB.");
 
     //Calculate danger index and store in cache
+    //Use the commented-out line to run the app locally. 
     //await fetch(`http://localhost:8989/danger_index_save/${newId}`, {method: "POST"});
     await fetch(`https://gta25aprd.ethz.ch/app/danger_index_save/${newId}`, {method: "POST"});
 
@@ -846,6 +849,7 @@ const loggedInAsEl = document.getElementById("logged-in-as");
 
 
   //Login/ Register logic
+  //Use the commented-out line to run the app locally. 
   //async function loginUser(username, password) {const res = await fetch("http://localhost:8989/login", {method: "POST",headers: { "Content-Type": "application/json" },body: JSON.stringify({ username, password })});
   async function loginUser(username, password) {const res = await fetch("https://gta25aprd.ethz.ch/app/login", {method: "POST",headers: { "Content-Type": "application/json" },body: JSON.stringify({ username, password })});
                                                 
@@ -854,6 +858,7 @@ const loggedInAsEl = document.getElementById("logged-in-as");
     return data.user_id;
   }
 
+  //Use the commented-out line to run the app locally. 
   //async function registerUser(username, password) {const res = await fetch("http://localhost:8989/register", {method: "POST",headers: { "Content-Type": "application/json" },body: JSON.stringify({ username, password })});
   async function registerUser(username, password) {const res = await fetch("https://gta25aprd.ethz.ch/app/register", {method: "POST",headers: { "Content-Type": "application/json" },body: JSON.stringify({ username, password })});
                                                    
@@ -995,6 +1000,7 @@ const loggedInAsEl = document.getElementById("logged-in-as");
     const list = document.getElementById("profile-trajectories");
     list.innerHTML = "Loading...";
 
+    //Use the commented-out line to run the app locally. 
     //const res = await fetch(`http://localhost:8989/user_trajectories_90/${CURRENT_USER_ID}`);
     const res = await fetch(`https://gta25aprd.ethz.ch/app/user_trajectories_90/${CURRENT_USER_ID}`);
     
@@ -1027,6 +1033,7 @@ const loggedInAsEl = document.getElementById("logged-in-as");
 
   async function loadDangerIndex(trajId) {
     try {
+        //Use the commented-out line to run the app locally. 
         //const res = await fetch(`http://localhost:8989/danger_index/${trajId}`);
         const res = await fetch(`https://gta25aprd.ethz.ch/app/danger_index/${trajId}`);
       
@@ -1048,6 +1055,7 @@ const loggedInAsEl = document.getElementById("logged-in-as");
 
   async function loadAverageDangerIndex() {
     try {
+        //Use the commented-out line to run the app locally. 
         //const res = await fetch("http://localhost:8989/danger_index_average");
         const res = await fetch("https://gta25aprd.ethz.ch/app/danger_index_average");
 
@@ -1090,6 +1098,7 @@ const loggedInAsEl = document.getElementById("logged-in-as");
     const distanceEl = document.getElementById("traj-distance");
     const speedEl = document.getElementById("traj-speed");
 
+    //Use the commented-out line to run the app locally. 
     //const res = await fetch(`http://localhost:8989/trajectory_details_90/${trajId}`);
     const res = await fetch(`https://gta25aprd.ethz.ch/app/trajectory_details_90/${trajId}`);
     
@@ -1492,6 +1501,7 @@ async function saveTrajectoryGeometryToDB(points, trajectory_id) {
     body: postData
   });
 }
+
 
 
 
