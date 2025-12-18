@@ -253,7 +253,7 @@ const loggedInAsEl = document.getElementById("logged-in-as");
     async function loadBuffers() {
       try {
         //Use the commented-out line to run the app locally. 
-        //const response = await fetch('http://host:8989/get_buffers');
+        //const response = await fetch('http://localhost:8989/get_buffers');
         const response = await fetch('https://gta25aprd.ethz.ch/app/get_buffers');
         const geojson = await response.json();
 
@@ -1501,6 +1501,7 @@ async function saveTrajectoryGeometryToDB(points, trajectory_id) {
     body: postData
   });
 }
+
 
 
 
